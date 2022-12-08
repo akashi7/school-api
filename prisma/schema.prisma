@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ERole {
+  ADMIN
+  STUDENT
+  PARENT
+  SCHOOL
+}
+
+enum ELevelOfStudy {
+  NURSERY
+  PRIMARY
+  OLEVEL
+  ALEVEL
+  UNIVERSITY
+}
+
+enum EPaymentMethod {
+  AIRTEL
+  MTN
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now())
+  deletedAt    DateTime?
+  email        String?        @unique
+  username     String?        @unique
+  phone        String?        @unique
+  uniqueId     String?        @unique
+  names        String
+  levelOfStudy ELevelOfStudy?
+  country      String?
+  countryCode  String?
+  password     String?
+  refreshToken String?
+  active       Boolean        @default(true)
+  role         ERole          @default(STUDENT)
+  schoolId     Int?
+  school       User?          @relation("SchoolStudents", fields: [schoolId], references: [id])
+  students     User[]         @relation("SchoolStudents")
+  parentId     Int?
+  parent       User?          @relation("ParentChildren", fields: [parentId], references: [id])
+  children     User[]         @relation("ParentChildren")
+  feesPaid     Transaction[]  @relation("ParentTransactions")
+  feesReceived Transaction[]  @relation("SchoolTransactions")
+}
+
+model Transaction {
+  id            Int            @id @default(autoincrement())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now())
+  deletedAt     DateTime?
+  referenceCode String
+  paymentMethod EPaymentMethod
+  payer         User?          @relation("ParentTransactions", fields: [payerId], references: [id])
+  payerId       Int?
+  payee         User?          @relation("SchoolTransactions", fields: [payeeId], references: [id])
+  payeeId       Int?
+  date          DateTime
+  phoneNumber   String?
+  amount        Float
+  reason        String?
+}
