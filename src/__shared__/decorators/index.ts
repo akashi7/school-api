@@ -20,13 +20,13 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { IsOptional } from 'class-validator';
-import { IPagination } from '../../interfaces/page.interface';
+import { IPagination } from '../interfaces/page.interface';
 import {
   getArraySchema,
   getGenericErrorResponseSchema,
   getGenericResponseSchema,
   getPaginatedSchema,
-} from '../../utils/swagger.util';
+} from '../utils/swagger.util';
 
 export const PaginationParams = createParamDecorator(
   (_data, ctx: ExecutionContext): IPagination => {

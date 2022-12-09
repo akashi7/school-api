@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import { IAppConfig } from '../../interfaces/app-config.interface';
+import { IAppConfig } from '../interfaces/app-config.interface';
 
 /**
  * Defines the application config variables
@@ -32,8 +32,8 @@ export function appConfig(): IAppConfig {
  * @param app The NestJS Application instance
  */
 export function configureSwagger(app: INestApplication): void {
-  const API_TITLE = 'API Application';
-  const API_DESCRIPTION = 'API Doc. for API Application';
+  const API_TITLE = 'School Nestpay';
+  const API_DESCRIPTION = 'API Doc. for School Nestpay API';
   const API_VERSION = '1.0';
   const SWAGGER_URL = 'docs/swagger-ui';
   const options = new DocumentBuilder()
@@ -43,7 +43,7 @@ export function configureSwagger(app: INestApplication): void {
     .build();
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup(SWAGGER_URL, app, document, {
-    customSiteTitle: 'Trust Seal System API',
+    customSiteTitle: 'School Nestpay API',
     customCss: '.swagger-ui .topbar { display: none }',
     swaggerOptions: {
       docExpansion: 'none',
