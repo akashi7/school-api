@@ -1,0 +1,57 @@
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { ERole, Prisma } from "@prisma/client";
+import { PrismaService } from "../prisma.service";
+import { CreateStudentDto } from "../user/dto/create-user.dto";
+import { StudentSearchDto } from "./dto/student-search.dto";
+
+@Injectable()
+export class StudentService {
+  constructor(private readonly prisma: PrismaService) {}
+  async findAll(dto: StudentSearchDto) {
+    const where: Prisma.UserWhereInput = { role: ERole.STUDENT };
+    if (dto.academicYear)
+      where.academicYear = {
+        contains: dto.academicYear,
+      };
+    if (dto.name) where.names = { contains: dto.name };
+    if (dto.school) where.schoolId = +dto.school;
+    const students = await this.prisma.user.findMany({
+      where: { ...where },
+    });
+    return students;
+  }
+
+  async create(dto: CreateStudentDto) {
+    const school = await this.prisma.user.findFirst({
+      where: { id: dto.schoolId, role: ERole.SCHOOL },
+    });
+    if (!school) throw new NotFoundException("School not found");
+    const parent = await this.prisma.user.findFirst({
+      where: { id: dto.parentId, role: ERole.PARENT },
+    });
+    if (!parent) throw new NotFoundException("Parent not found");
+    const payload = await this.prisma.user.create({
+      data: {
+        role: ERole.STUDENT,
+        names: dto.names,
+        username: dto.username,
+        regNo: dto.regNo,
+        academicYear: dto.academicYear,
+        schoolId: school.id,
+        parentId: parent.id,
+      },
+    });
+    return payload;
+  }
+
+  async findOne(id: number) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+        role: ERole.PARENT,
+      },
+    });
+    if (!user) throw new NotFoundException("Parent not found");
+    return user;
+  }
+}

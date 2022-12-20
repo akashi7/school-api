@@ -4,7 +4,7 @@ import {
   createParamDecorator,
   ExecutionContext,
   HttpStatus,
-} from '@nestjs/common';
+} from "@nestjs/common";
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -18,15 +18,15 @@ import {
   ApiQuery,
   ApiResponse,
   ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import { IsOptional } from 'class-validator';
-import { IPagination } from '../interfaces/page.interface';
+} from "@nestjs/swagger";
+import { IsOptional } from "class-validator";
+import { IPagination } from "../interfaces/page.interface";
 import {
   getArraySchema,
   getGenericErrorResponseSchema,
   getGenericResponseSchema,
   getPaginatedSchema,
-} from '../utils/swagger.util';
+} from "../utils/swagger.util";
 
 export const PaginationParams = createParamDecorator(
   (_data, ctx: ExecutionContext): IPagination => {
@@ -44,8 +44,8 @@ export const PaginationParams = createParamDecorator(
  */
 export function Paginated() {
   return applyDecorators(
-    ApiQuery({ name: 'page', required: false }),
-    ApiQuery({ name: 'limit', required: false }),
+    ApiQuery({ name: "page", required: false }),
+    ApiQuery({ name: "limit", required: false }),
   );
 }
 
@@ -87,7 +87,7 @@ export function Response(status: number, model?: any) {
         ...getGenericResponseSchema(model),
       }),
     );
-  else throw new TypeError('Status passed to decorator not a success status');
+  else throw new TypeError("Status passed to decorator not a success status");
 }
 
 /**
@@ -156,7 +156,7 @@ export function CreatedArrayResponse(model: any) {
 export function ErrorResponses(...errorResponses: any[]) {
   return applyDecorators(
     ApiResponse({
-      description: 'Error response schema.',
+      description: "Error response schema.",
       ...getGenericErrorResponseSchema(),
     }),
     ...errorResponses.map((e) => e()),
@@ -169,7 +169,7 @@ export function ErrorResponses(...errorResponses: any[]) {
 export function UnauthorizedResponse() {
   return applyDecorators(
     ApiUnauthorizedResponse({
-      description: 'Unauthorized',
+      description: "Unauthorized",
     }),
   );
 }
@@ -180,7 +180,7 @@ export function UnauthorizedResponse() {
 export function ForbiddenResponse() {
   return applyDecorators(
     ApiForbiddenResponse({
-      description: 'Forbidden resource',
+      description: "Forbidden resource",
     }),
   );
 }
@@ -191,7 +191,7 @@ export function ForbiddenResponse() {
 export function BadRequestResponse() {
   return applyDecorators(
     ApiBadRequestResponse({
-      description: 'Invalid request',
+      description: "Invalid request",
     }),
   );
 }
@@ -202,7 +202,7 @@ export function BadRequestResponse() {
 export function ConflictResponse() {
   return applyDecorators(
     ApiConflictResponse({
-      description: 'Conflict',
+      description: "Conflict",
     }),
   );
 }
@@ -212,7 +212,7 @@ export function ConflictResponse() {
 export function NotFoundResponse() {
   return applyDecorators(
     ApiNotFoundResponse({
-      description: 'Resource Not found',
+      description: "Resource Not found",
     }),
   );
 }
