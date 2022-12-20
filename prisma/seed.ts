@@ -1,19 +1,19 @@
-import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import { PrismaClient } from "@prisma/client";
+import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log(`Start seeding ...`);
   // SEED THE ADMIN
-  if ((await prisma.user.count({ where: { role: 'ADMIN' } })) < 1) {
+  if ((await prisma.user.count({ where: { role: "ADMIN" } })) < 1) {
     await prisma.user.create({
       data: {
-        names: 'Brian Gitego',
-        email: 'admin@nestpay.rw',
+        names: "Brian Gitego",
+        email: process.env.ADMIN_EMAIL,
         password: bcrypt.hashSync(process.env.ADMIN_PASSWORD, 10),
-        username: 'admin',
-        role: 'ADMIN',
+        username: "admin",
+        role: "ADMIN",
       },
     });
   }

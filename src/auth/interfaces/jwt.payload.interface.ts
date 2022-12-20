@@ -1,4 +1,4 @@
-import { ERole } from '@prisma/client';
+import { ERole } from "@prisma/client";
 
 export interface JwtPayload {
   id: number;

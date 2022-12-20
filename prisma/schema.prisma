@@ -14,44 +14,37 @@ enum ERole {
   SCHOOL
 }
 
-enum ELevelOfStudy {
-  NURSERY
-  PRIMARY
-  OLEVEL
-  ALEVEL
-  UNIVERSITY
-}
-
 enum EPaymentMethod {
   AIRTEL
   MTN
 }
 
 model User {
-  id           Int            @id @default(autoincrement())
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @default(now())
+  id           Int           @id @default(autoincrement())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @default(now())
   deletedAt    DateTime?
-  email        String?        @unique
-  username     String?        @unique
-  phone        String?        @unique
-  uniqueId     String?        @unique
+  email        String?       @unique
+  username     String?       @unique
+  phone        String?       @unique
+  regNo        String?       @unique
+  schoolCode   String?       @unique
   names        String
-  levelOfStudy ELevelOfStudy?
+  academicYear String?
   country      String?
   countryCode  String?
   password     String?
   refreshToken String?
-  active       Boolean        @default(true)
-  role         ERole          @default(STUDENT)
+  active       Boolean       @default(true)
+  role         ERole         @default(STUDENT)
   schoolId     Int?
-  school       User?          @relation("SchoolStudents", fields: [schoolId], references: [id])
-  students     User[]         @relation("SchoolStudents")
+  school       User?         @relation("SchoolStudents", fields: [schoolId], references: [id])
+  students     User[]        @relation("SchoolStudents")
   parentId     Int?
-  parent       User?          @relation("ParentChildren", fields: [parentId], references: [id])
-  children     User[]         @relation("ParentChildren")
-  feesPaid     Transaction[]  @relation("ParentTransactions")
-  feesReceived Transaction[]  @relation("SchoolTransactions")
+  parent       User?         @relation("ParentChildren", fields: [parentId], references: [id])
+  children     User[]        @relation("ParentChildren")
+  feesPaid     Transaction[] @relation("ParentTransactions")
+  feesReceived Transaction[] @relation("SchoolTransactions")
 }
 
 model Transaction {

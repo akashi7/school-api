@@ -14,7 +14,7 @@ FROM node:16.16-slim as production
 
 WORKDIR /usr/src/app
 
-EXPOSE 4000
+EXPOSE 8000
 
 COPY --from=development /usr/src/app .
 

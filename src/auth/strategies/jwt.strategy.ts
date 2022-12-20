@@ -1,11 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PassportStrategy } from '@nestjs/passport';
-import { PrismaClient, User } from '@prisma/client';
-import 'dotenv/config';
-import { Request } from 'express';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { JwtPayload } from '../interfaces/jwt.payload.interface';
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { PassportStrategy } from "@nestjs/passport";
+import { PrismaClient, User } from "@prisma/client";
+import "dotenv/config";
+import { Request } from "express";
+import { ExtractJwt, Strategy } from "passport-jwt";
+import { JwtPayload } from "../interfaces/jwt.payload.interface";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -15,7 +15,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         (request: Request): string => request?.cookies?.nestpay_jwt,
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get('jwt').secret,
+      secretOrKey: configService.get("jwt").secret,
     });
   }
 
