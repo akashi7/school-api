@@ -7,6 +7,7 @@ import { StudentSearchDto } from "./dto/student-search.dto";
 @Injectable()
 export class StudentService {
   constructor(private readonly prisma: PrismaService) {}
+
   async findAll(dto: StudentSearchDto) {
     const where: Prisma.UserWhereInput = { role: ERole.STUDENT };
     if (dto.academicYear)
@@ -14,7 +15,7 @@ export class StudentService {
         contains: dto.academicYear,
       };
     if (dto.name) where.names = { contains: dto.name };
-    if (dto.school) where.schoolId = +dto.school;
+    if (dto.school) where.schoolId = dto.school;
     const students = await this.prisma.user.findMany({
       where: { ...where },
     });
@@ -44,14 +45,15 @@ export class StudentService {
     return payload;
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const user = await this.prisma.user.findFirst({
       where: {
         id,
-        role: ERole.PARENT,
+        role: ERole.STUDENT,
       },
+      include: { parent: true, school: true },
     });
-    if (!user) throw new NotFoundException("Parent not found");
+    if (!user) throw new NotFoundException("Student not found");
     return user;
   }
 }

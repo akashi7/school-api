@@ -2,7 +2,7 @@ import { IsISO31661Alpha2, IsISO31661Alpha3, IsString } from "class-validator";
 
 export class AdminLoginDto {
   @IsString()
-  username: string;
+  email: string;
   @IsString()
   password: string;
 }

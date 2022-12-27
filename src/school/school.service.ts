@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { ERole } from "@prisma/client";
-import { PasswordEncryption } from "../auth/utils/password-encrytion";
+import { PasswordEncryption } from "../auth/utils/password-encrytion.util";
 import { PrismaService } from "../prisma.service";
 import { CreateSchoolDto } from "../user/dto/create-user.dto";
 
@@ -50,7 +50,7 @@ export class SchoolService {
     return payload;
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const user = await this.prisma.user.findFirst({
       where: {
         id,

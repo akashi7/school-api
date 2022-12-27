@@ -1,0 +1,22 @@
+services:
+  nestpay_api:
+    container_name: nestpay_api
+    image: gitegob/nestpay-be
+    ports:
+      - 8000:8000
+    depends_on:
+      - nestpay_mongodb1
+    links:
+      - nestpay_mongodb1
+    volumes:
+      - .:/usr/src/app
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      DATABASE_URL: ${DATABASE_URL}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}

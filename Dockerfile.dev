@@ -1,4 +1,4 @@
-FROM node:16.16-slim As development
+FROM node:16.17.0-bullseye-slim As development
 
 WORKDIR /usr/src/app
 
@@ -10,7 +10,7 @@ COPY . .
 
 RUN yarn build
 
-FROM node:16.16-slim as production
+FROM node:16.17.0-bullseye-slim as production
 
 WORKDIR /usr/src/app
 
@@ -21,4 +21,4 @@ COPY --from=development /usr/src/app .
 # THIS IS TO ENABLE PRISMA DO DETECT REQUIRED FILES
 RUN apt-get update && apt-get install -y openssl libssl-dev
 
-CMD ["yarn","start:prod"]
+CMD ["yarn","start:dev"]

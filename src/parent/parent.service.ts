@@ -43,12 +43,13 @@ export class ParentService {
     return payload;
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const user = await this.prisma.user.findFirst({
       where: {
         id,
         role: ERole.PARENT,
       },
+      include: { children: true },
     });
     if (!user) throw new NotFoundException("Parent not found");
     return user;

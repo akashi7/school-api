@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -20,7 +20,7 @@ enum EPaymentMethod {
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @default(now())
   deletedAt    DateTime?
@@ -37,27 +37,27 @@ model User {
   refreshToken String?
   active       Boolean       @default(true)
   role         ERole         @default(STUDENT)
-  schoolId     Int?
-  school       User?         @relation("SchoolStudents", fields: [schoolId], references: [id])
-  students     User[]        @relation("SchoolStudents")
-  parentId     Int?
-  parent       User?         @relation("ParentChildren", fields: [parentId], references: [id])
-  children     User[]        @relation("ParentChildren")
-  feesPaid     Transaction[] @relation("ParentTransactions")
-  feesReceived Transaction[] @relation("SchoolTransactions")
+  schoolId     String?       @db.ObjectId
+  school       User?         @relation(name: "SchoolStudents", fields: [schoolId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  students     User[]        @relation(name: "SchoolStudents")
+  parentId     String?       @db.ObjectId
+  parent       User?         @relation(name: "ParentChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children     User[]        @relation(name: "ParentChildren")
+  feesPaid     Transaction[] @relation(name: "ParentTransactions")
+  feesReceived Transaction[] @relation(name: "SchoolTransactions")
 }
 
 model Transaction {
-  id            Int            @id @default(autoincrement())
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now())
   deletedAt     DateTime?
   referenceCode String
   paymentMethod EPaymentMethod
+  payerId       String?        @db.ObjectId
   payer         User?          @relation("ParentTransactions", fields: [payerId], references: [id])
-  payerId       Int?
   payee         User?          @relation("SchoolTransactions", fields: [payeeId], references: [id])
-  payeeId       Int?
+  payeeId       String?        @db.ObjectId
   date          DateTime
   phoneNumber   String?
   amount        Float

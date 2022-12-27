@@ -19,9 +19,14 @@ import {
 } from "../__shared__/decorators";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { AuthService } from "./auth.service";
-import { Auth } from "./decorators/auth.decorator";
+import { Protected } from "./decorators/auth.decorator";
 import { GetUser } from "./decorators/get-user.decorator";
-import { AdminLoginDto } from "./dto/login.dto";
+import {
+  AdminLoginDto,
+  ParentLoginDto,
+  SchoolLoginDto,
+  StudentLoginDto,
+} from "./dto/login.dto";
 import JwtRefreshGuard from "./guards/jwt-refresh.guard";
 
 @ApiTags("Authentication")
@@ -38,6 +43,86 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<GenericResponse<{ refreshToken: string }>> {
     const { accessToken, refreshToken } = await this.authService.adminLogin(
+      dto,
+    );
+    response.cookie("nestpay_jwt", accessToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+    response.cookie("nestpay_refresh_jwt", refreshToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+    return {
+      message: "You have logged in successfully",
+      payload: { refreshToken },
+    };
+  }
+  @Post("/login/student")
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  @HttpCode(HttpStatus.OK)
+  async studentLogin(
+    @Body() dto: StudentLoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<GenericResponse<{ refreshToken: string }>> {
+    const { accessToken, refreshToken } = await this.authService.studentLogin(
+      dto,
+    );
+    response.cookie("nestpay_jwt", accessToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+    response.cookie("nestpay_refresh_jwt", refreshToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+    return {
+      message: "You have logged in successfully",
+      payload: { refreshToken },
+    };
+  }
+
+  @Post("/login/school")
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  @HttpCode(HttpStatus.OK)
+  async schoolLogin(
+    @Body() dto: SchoolLoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<GenericResponse<{ refreshToken: string }>> {
+    const { accessToken, refreshToken } = await this.authService.schoolLogin(
+      dto,
+    );
+    response.cookie("nestpay_jwt", accessToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+    response.cookie("nestpay_refresh_jwt", refreshToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+    return {
+      message: "You have logged in successfully",
+      payload: { refreshToken },
+    };
+  }
+
+  @Post("/login/parent")
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  @HttpCode(HttpStatus.OK)
+  async parentLogin(
+    @Body() dto: ParentLoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<GenericResponse<{ refreshToken: string }>> {
+    const { accessToken, refreshToken } = await this.authService.parentLogin(
       dto,
     );
     response.cookie("nestpay_jwt", accessToken, {
@@ -80,7 +165,7 @@ export class AuthController {
 
   @Get("/logout")
   @OkResponse()
-  @Auth()
+  @Protected()
   async logout(
     @Res({ passthrough: true }) response: Response,
     @GetUser() user: User,

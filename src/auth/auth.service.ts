@@ -3,8 +3,14 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { ERole, User } from "@prisma/client";
 import { PrismaService } from "../prisma.service";
-import { AdminLoginDto } from "./dto/login.dto";
-import { PasswordEncryption } from "./utils/password-encrytion";
+import {
+  AdminLoginDto,
+  ParentLoginDto,
+  SchoolLoginDto,
+  StudentLoginDto,
+} from "./dto/login.dto";
+import { JwtPayload } from "./interfaces/jwt.payload.interface";
+import { PasswordEncryption } from "./utils/password-encrytion.util";
 
 @Injectable()
 export class AuthService {
@@ -16,41 +22,120 @@ export class AuthService {
   ) {}
 
   async adminLogin(dto: AdminLoginDto) {
-    const { username, password } = dto;
-    console.log(dto);
+    const { email, password } = dto;
     const user = await this.prismaService.user.findFirst({
       where: {
-        username,
+        email,
         role: ERole.ADMIN,
       },
     });
-    if (!user) {
+    if (!user)
       throw new BadRequestException("The email or password is incorrect");
-    } else {
-      const isMatch = this.passwordEncryption.comparePassword(
-        password,
-        user.password,
-      );
-      if (!isMatch) {
-        throw new BadRequestException("The email or password is incorrect");
-      }
-      const accessToken = await this.jwtService.signAsync({
-        id: user.id,
-        role: user.role,
-      });
-      const refreshToken = await this.jwtService.signAsync({
-        id: user.id,
-      });
-      await this.prismaService.user.update({
-        where: { id: user.id },
-        data: { refreshToken: refreshToken },
-      });
-
-      return {
-        accessToken,
-        refreshToken,
-      };
+    const isMatch = this.passwordEncryption.comparePassword(
+      password,
+      user.password,
+    );
+    if (!isMatch) {
+      throw new BadRequestException("The email or password is incorrect");
     }
+    const { accessToken, refreshToken } = await this.generateTokens({
+      id: user.id,
+      role: user.role,
+    });
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { refreshToken: refreshToken },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async parentLogin(
+    dto: ParentLoginDto,
+  ): Promise<{ accessToken: any; refreshToken: any }> {
+    const { phone } = dto;
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        phone,
+        role: ERole.PARENT,
+      },
+    });
+    if (!user) throw new BadRequestException("Parent account doesn't exist");
+    const { accessToken, refreshToken } = await this.generateTokens({
+      id: user.id,
+      role: user.role,
+    });
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { refreshToken: refreshToken },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+  async schoolLogin(
+    dto: SchoolLoginDto,
+  ): Promise<{ accessToken: any; refreshToken: any }> {
+    const { countryCode, password, username } = dto;
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        countryCode,
+        username,
+        role: ERole.SCHOOL,
+      },
+    });
+    if (!user) throw new BadRequestException("School account doesn't exist");
+    const isMatch = this.passwordEncryption.comparePassword(
+      password,
+      user.password,
+    );
+    if (!isMatch) {
+      throw new BadRequestException("The email or password is incorrect");
+    }
+    const { accessToken, refreshToken } = await this.generateTokens({
+      id: user.id,
+      role: user.role,
+    });
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { refreshToken: refreshToken },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+  async studentLogin(
+    dto: StudentLoginDto,
+  ): Promise<{ accessToken: any; refreshToken: any }> {
+    const { countryCode, regNo } = dto;
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        countryCode,
+        regNo,
+        role: ERole.STUDENT,
+      },
+    });
+    if (!user) throw new BadRequestException("Student account doesn't exist");
+    const { accessToken, refreshToken } = await this.generateTokens({
+      id: user.id,
+      role: user.role,
+    });
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { refreshToken: refreshToken },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
   }
 
   async getProfile(user: User): Promise<Partial<User>> {
@@ -82,5 +167,16 @@ export class AuthService {
       data: { refreshToken: null },
     });
     return;
+  }
+
+  private async generateTokens({ id, role }: JwtPayload) {
+    const accessToken = await this.jwtService.signAsync({
+      id,
+      role,
+    });
+    const refreshToken = await this.jwtService.signAsync({
+      id,
+    });
+    return { accessToken, refreshToken };
   }
 }
