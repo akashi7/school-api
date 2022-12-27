@@ -28,8 +28,8 @@ export class SchoolController {
   }
 
   @Get(":id")
-  async findOne(@Param("id", ParseIntPipe) id: string) {
-    const payload = await this.schoolService.findOne(+id);
+  async findOne(@Param("id") id: string) {
+    const payload = await this.schoolService.findOne(id);
     return new GenericResponse("School retrieved", payload);
   }
 }

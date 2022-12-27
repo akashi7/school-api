@@ -1,9 +1,9 @@
 import { IsNumberString, IsOptional, IsString } from "class-validator";
 
 export class StudentSearchDto {
-  @IsNumberString()
+  @IsString()
   @IsOptional()
-  school?: number;
+  school?: string;
   @IsString()
   @IsOptional()
   academicYear?: string;

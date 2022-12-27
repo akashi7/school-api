@@ -43,7 +43,7 @@ export class ParentService {
     return payload;
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const user = await this.prisma.user.findFirst({
       where: {
         id,

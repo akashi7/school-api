@@ -10,8 +10,8 @@ export abstract class CreateUserDto {
 export class CreateStudentDto extends CreateUserDto {
   role = ERole.STUDENT;
   regNo: string;
-  schoolId: number;
-  parentId: number;
+  schoolId: string;
+  parentId: string;
   academicYear: string;
 }
 

@@ -4,7 +4,7 @@ import * as bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log(`Start seeding ...`);
+  console.log(`Start seeding ${process.env.DATABASE_URL} ...`);
   // SEED THE ADMIN
   if ((await prisma.user.count({ where: { role: "ADMIN" } })) < 1) {
     await prisma.user.create({

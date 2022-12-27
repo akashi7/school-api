@@ -17,8 +17,8 @@ export class ParentController {
   }
 
   @Get(":id")
-  async findOne(@Param("id", ParseIntPipe) id: string) {
-    const payload = await this.parentService.findOne(+id);
+  async findOne(@Param("id") id: string) {
+    const payload = await this.parentService.findOne(id);
     return new GenericResponse("Parent retrieved", payload);
   }
 
