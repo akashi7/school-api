@@ -49,6 +49,7 @@ export class ParentService {
         id,
         role: ERole.PARENT,
       },
+      include: { children: true },
     });
     if (!user) throw new NotFoundException("Parent not found");
     return user;

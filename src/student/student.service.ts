@@ -49,10 +49,11 @@ export class StudentService {
     const user = await this.prisma.user.findFirst({
       where: {
         id,
-        role: ERole.PARENT,
+        role: ERole.STUDENT,
       },
+      include: { parent: true, school: true },
     });
-    if (!user) throw new NotFoundException("Parent not found");
+    if (!user) throw new NotFoundException("Student not found");
     return user;
   }
 }

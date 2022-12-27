@@ -1,59 +1,3 @@
-# version: "3.7"
-# services:
-#   nestpay_api:
-#     container_name: nestpay_api
-#     image: gitegob/nestpay-be
-#     ports:
-#       - 8000:8000
-#     depends_on:
-#       - nestpay_mongodb1
-#     links:
-#       - nestpay_mongodb1
-#     volumes:
-#       - .:/usr/src/app
-#     environment:
-#       NODE_ENV: ${NODE_ENV}
-#       PORT: ${PORT}
-#       DATABASE_URL: ${DATABASE_URL}
-#       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
-#       JWT_SECRET: ${JWT_SECRET}
-#       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
-#       SWAGGER_ENABLED: ${SWAGGER_ENABLED}
-#       ADMIN_EMAIL: ${ADMIN_EMAIL}
-#       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-
-#   nestpay_mongodb1:
-#     container_name: nestpay_mongodb1
-#     image: mongo:5
-#     ports:
-#       - 27017:27017
-#     command: mongod --replSet myReplicaSet --bind_ip localhost,nestpay_mongodb1
-#     volumes:
-#       - nestpay_mongodb_data:/data/db
-#     depends_on:
-#       - nestpay_mongodb2
-#       - nestpay_mongodb3
-
-#   nestpay_mongodb2:
-#     container_name: nestpay_mongodb2
-#     image: mongo:5
-#     ports:
-#       - 27018:27017
-#     command: mongod --replSet myReplicaSet --bind_ip localhost,nestpay_mongodb2
-
-#   nestpay_mongodb3:
-#     container_name: nestpay_mongodb3
-#     image: mongo:5
-#     ports:
-#       - 27019:27017
-#     command: mongod --replSet myReplicaSet --bind_ip localhost,nestpay_mongodb3
-# volumes:
-#   nestpay_mongodb_data:
-# networks:
-#   mongoCluster:
-
-version: "3.8"
-
 services:
   nestpay_api:
     container_name: nestpay_api
@@ -61,7 +5,9 @@ services:
     ports:
       - 8000:8000
     depends_on:
-      - mongo1
+      - nestpay_mongodb1
+    links:
+      - nestpay_mongodb1
     volumes:
       - .:/usr/src/app
     environment:
@@ -74,49 +20,3 @@ services:
       SWAGGER_ENABLED: ${SWAGGER_ENABLED}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-    restart: always
-  mongo1:
-    container_name: mongo1
-    image: mongo:4.4
-    volumes:
-      - mongo1_data:/data/db
-      - ./rs-init.sh:/scripts/rs-init.sh
-    networks:
-      - mongors-network
-    ports:
-      - 27017:27017
-    links:
-      - mongo2
-      - mongo3
-    restart: always
-    entrypoint: ["/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs"]
-  mongo2:
-    container_name: mongo2
-    image: mongo:4.4
-    volumes:
-      - mongo2_data:/data/db
-    networks:
-      - mongors-network
-    ports:
-      - 27018:27017
-    restart: always
-    entrypoint: ["/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs"]
-  mongo3:
-    container_name: mongo3
-    image: mongo:4.4
-    volumes:
-      - mongo3_data:/data/db
-    networks:
-      - mongors-network
-    ports:
-      - 27019:27017
-    restart: always
-    entrypoint: ["/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs"]
-
-networks:
-  mongors-network:
-    driver: bridge
-volumes:
-  mongo1_data:
-  mongo2_data:
-  mongo3_data:

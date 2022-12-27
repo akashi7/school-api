@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { PasswordEncryption } from "../auth/utils/password-encrytion";
+import { PasswordEncryption } from "../auth/utils/password-encrytion.util";
 import { SchoolController } from "./school.controller";
 import { SchoolService } from "./school.service";
 

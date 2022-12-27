@@ -6,7 +6,7 @@ import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { JwtRefreshStrategy } from "./strategies/refresh-jwt.strategy";
-import { PasswordEncryption } from "./utils/password-encrytion";
+import { PasswordEncryption } from "./utils/password-encrytion.util";
 
 @Global()
 @Module({

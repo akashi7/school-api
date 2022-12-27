@@ -1,28 +1,33 @@
-import { ERole } from "@prisma/client";
-import { Exclude } from "class-transformer";
+import { IsPhoneNumber, IsString, Length, Min } from "class-validator";
 
 export abstract class CreateUserDto {
-  @Exclude({ toClassOnly: true })
-  role: ERole;
+  @IsString()
   username: string;
+  @IsString()
   names: string;
 }
 export class CreateStudentDto extends CreateUserDto {
-  role = ERole.STUDENT;
+  @IsString()
   regNo: string;
+  @IsString()
   schoolId: string;
+  @IsString()
   parentId: string;
+  @IsString()
   academicYear: string;
 }
 
 export class CreateSchoolDto extends CreateUserDto {
-  role = ERole.SCHOOL;
+  @IsPhoneNumber("RW")
   phone: string;
+  @IsString()
+  @Length(6)
   password: string;
+  @IsString()
   schoolCode: string;
 }
 
 export class CreateParentDto extends CreateUserDto {
-  role = ERole.PARENT;
+  @IsPhoneNumber("RW")
   phone: string;
 }
