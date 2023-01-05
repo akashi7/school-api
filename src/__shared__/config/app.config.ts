@@ -17,6 +17,7 @@ import { IAppConfig } from "../interfaces/app-config.interface";
 export function appConfig(): IAppConfig {
   return {
     port: +process.env.PORT,
+    databaseUrl: process.env.DATABASE_URL,
     allowedOrigins: process.env.ALLOWED_ORIGINS?.split(","),
     swaggerEnabled: process.env.SWAGGER_ENABLED === "true",
     env: process.env.NODE_ENV,

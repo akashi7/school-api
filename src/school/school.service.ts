@@ -15,10 +15,10 @@ export class SchoolService {
     const payload = await this.prisma.user.create({
       data: {
         role: ERole.SCHOOL,
-        names: dto.names,
+        schoolName: dto.names,
         username: dto.username,
         phone: dto.phone,
-        schoolCode: dto.schoolCode,
+        schoolTitle: dto.schoolTitle,
         password: this.passwordEncryption.hashPassword(dto.password),
       },
     });
@@ -35,12 +35,10 @@ export class SchoolService {
         createdAt: true,
         updatedAt: true,
         deletedAt: true,
-        email: true,
-        username: true,
-        schoolCode: true,
+        schoolTitle: true,
         phone: true,
-        names: true,
-        country: true,
+        schoolName: true,
+        countryName: true,
         countryCode: true,
         refreshToken: true,
         active: true,

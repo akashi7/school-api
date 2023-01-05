@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { ERole, User } from "@prisma/client";
 import { PrismaService } from "../prisma.service";
+import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
 import {
   AdminLoginDto,
   ParentLoginDto,
@@ -17,7 +18,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly passwordEncryption: PasswordEncryption,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService<IAppConfig>,
     private readonly prismaService: PrismaService,
   ) {}
 
@@ -114,11 +115,11 @@ export class AuthService {
   async studentLogin(
     dto: StudentLoginDto,
   ): Promise<{ accessToken: any; refreshToken: any }> {
-    const { countryCode, regNo } = dto;
+    const { countryCode, studentId } = dto;
     const user = await this.prismaService.user.findFirst({
       where: {
         countryCode,
-        regNo,
+        studentId,
         role: ERole.STUDENT,
       },
     });
