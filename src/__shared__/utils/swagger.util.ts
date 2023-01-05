@@ -11,7 +11,9 @@ export const getPaginatedSchema = (model: string | any): any => {
               properties: {
                 items: {
                   type: "array",
-                  items: { $ref: getSchemaPath(model) },
+                  items: model
+                    ? { $ref: getSchemaPath(model) }
+                    : { type: "object" },
                 },
                 totalItems: { type: "number" },
                 itemCount: { type: "number" },
@@ -38,7 +40,9 @@ export const getArraySchema = (model: string | any): any => {
               properties: {
                 data: {
                   type: "array",
-                  items: { $ref: getSchemaPath(model) },
+                  items: model
+                    ? { $ref: getSchemaPath(model) }
+                    : { type: "object" },
                 },
               },
             },
@@ -58,7 +62,7 @@ export const getGenericResponseSchema = (model?: string | any): any => {
             message: { type: "string" },
             payload: model
               ? { $ref: getSchemaPath(model) }
-              : { type: "string" },
+              : { type: "object" },
           },
         },
       ],

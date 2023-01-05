@@ -20,7 +20,7 @@ import {
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { IsOptional } from "class-validator";
-import { IPagination } from "../interfaces/page.interface";
+import { IPage, IPagination } from "../interfaces/pagination.interface";
 import {
   getArraySchema,
   getGenericErrorResponseSchema,
@@ -33,7 +33,7 @@ export const PaginationParams = createParamDecorator(
     const req = ctx.switchToHttp().getRequest();
     return {
       page: +req?.query?.page || 1,
-      limit: +req?.query?.limit || 10,
+      size: +req?.query?.limit || 10,
     };
   },
 );
@@ -122,7 +122,7 @@ export function CreatedResponse(model?: any) {
  * @param model optional model to be returned
  * @returns @ApiResponse
  */
-export function PageResponse(model: any) {
+export function PageResponse(model?: any) {
   return applyDecorators(ApiOkResponse({ ...getPaginatedSchema(model) }));
 }
 
@@ -131,7 +131,7 @@ export function PageResponse(model: any) {
  * @param model optional model to be returned
  * @returns @ApiResponse
  */
-export function OkArrayResponse(model: any) {
+export function OkArrayResponse(model?: any) {
   return applyDecorators(
     ApiResponse({ status: HttpStatus.OK, ...getArraySchema(model) }),
   );
@@ -142,7 +142,7 @@ export function OkArrayResponse(model: any) {
  * @param model optional model to be returned
  * @returns @ApiResponse
  */
-export function CreatedArrayResponse(model: any) {
+export function CreatedArrayResponse(model?: any) {
   return applyDecorators(
     ApiResponse({ status: HttpStatus.CREATED, ...getArraySchema(model) }),
   );
@@ -224,4 +224,17 @@ export function NotFoundResponse() {
  */
 export function OptionalProperty(options?: ApiPropertyOptions) {
   return applyDecorators(ApiPropertyOptional(options), IsOptional());
+}
+
+export class ResponseDto<T> {
+  message: string;
+  payload: T;
+}
+export class PageResponseDto<T> implements IPage<T> {
+  items: T[];
+  totalItems?: number;
+  itemCount?: number;
+  itemsPerPage?: number;
+  totalPages?: number;
+  currentPage?: number;
 }
