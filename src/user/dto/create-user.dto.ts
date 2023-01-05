@@ -1,4 +1,4 @@
-import { IsPhoneNumber, IsString, Length, Min } from "class-validator";
+import { IsPhoneNumber, IsString, Length } from "class-validator";
 
 export abstract class CreateUserDto {
   @IsString()
@@ -24,7 +24,7 @@ export class CreateSchoolDto extends CreateUserDto {
   @Length(6)
   password: string;
   @IsString()
-  schoolCode: string;
+  schoolTitle: string;
 }
 
 export class CreateParentDto extends CreateUserDto {

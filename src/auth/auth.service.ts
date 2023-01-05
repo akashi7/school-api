@@ -115,11 +115,11 @@ export class AuthService {
   async studentLogin(
     dto: StudentLoginDto,
   ): Promise<{ accessToken: any; refreshToken: any }> {
-    const { countryCode, regNo } = dto;
+    const { countryCode, studentId } = dto;
     const user = await this.prismaService.user.findFirst({
       where: {
         countryCode,
-        regNo,
+        studentId,
         role: ERole.STUDENT,
       },
     });

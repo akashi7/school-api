@@ -58,6 +58,7 @@ model User {
   // STUDENT
   studentId          String?
   fullName           String?
+  email              String?
   passportPhoto      String?
   dob                DateTime?
   gender             EGender?

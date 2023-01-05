@@ -11,7 +11,7 @@ export class ParentService {
     const payload = await this.prisma.user.create({
       data: {
         role: ERole.PARENT,
-        names: dto.names,
+        fullName: dto.names,
         username: dto.username,
         phone: dto.phone,
       },
@@ -32,8 +32,8 @@ export class ParentService {
         email: true,
         username: true,
         phone: true,
-        names: true,
-        country: true,
+        fullName: true,
+        countryName: true,
         countryCode: true,
         refreshToken: true,
         active: true,

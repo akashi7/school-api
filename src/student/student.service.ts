@@ -10,11 +10,8 @@ export class StudentService {
 
   async findAll(dto: StudentSearchDto) {
     const where: Prisma.UserWhereInput = { role: ERole.STUDENT };
-    if (dto.academicYear)
-      where.academicYear = {
-        contains: dto.academicYear,
-      };
-    if (dto.name) where.names = { contains: dto.name };
+    if (dto.academicYear) where.academicYearId = dto.academicYear;
+    if (dto.name) where.fullName = { contains: dto.name };
     if (dto.school) where.schoolId = dto.school;
     const students = await this.prisma.user.findMany({
       where: { ...where },
@@ -34,10 +31,10 @@ export class StudentService {
     const payload = await this.prisma.user.create({
       data: {
         role: ERole.STUDENT,
-        names: dto.names,
+        fullName: dto.names,
         username: dto.username,
-        regNo: dto.regNo,
-        academicYear: dto.academicYear,
+        studentId: dto.regNo,
+        academicYearId: dto.academicYear,
         schoolId: school.id,
         parentId: parent.id,
       },
