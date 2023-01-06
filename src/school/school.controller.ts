@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole } from "@prisma/client";
 import { Protected } from "../auth/decorators/auth.decorator";
@@ -29,5 +29,10 @@ export class SchoolController {
   async findOne(@Param("id") id: string) {
     const payload = await this.schoolService.findOne(id);
     return new GenericResponse("School retrieved", payload);
+  }
+  @Delete(":id")
+  async delete(@Param("id") id: string) {
+    const payload = await this.schoolService.delete(id);
+    return new GenericResponse("School deleted", payload);
   }
 }
