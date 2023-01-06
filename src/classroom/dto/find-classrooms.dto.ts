@@ -1,5 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString } from "class-validator";
+import { IsString } from "class-validator";
 import { OptionalProperty } from "../../__shared__/decorators";
 
 export class FindClassroomsDto {
