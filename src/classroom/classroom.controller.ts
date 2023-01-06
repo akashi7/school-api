@@ -22,8 +22,10 @@ import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
 import { ClassroomService } from "./classroom.service";
 import { CreateClassroomDto } from "./dto/create-classroom.dto";
+import { CreateStreamDto } from "./dto/create-stream.dto";
 import { FindClassroomsDto } from "./dto/find-classrooms.dto";
 import { UpdateClassroomDto } from "./dto/update-classroom.dto";
+import { UpdateStreamDto } from "./dto/update-stream.dto";
 
 @Controller("classrooms")
 @Protected(ERole.SCHOOL)
@@ -33,15 +35,23 @@ export class ClassroomController {
 
   @Post()
   @CreatedResponse()
-  async create(
-    @Body() createClassroomDto: CreateClassroomDto,
+  async create(@Body() dto: CreateClassroomDto, @GetUser() user: User) {
+    const payload = await this.classroomService.create(dto, user);
+    return new GenericResponse("Classroom created", payload);
+  }
+  @Post(":id/streams")
+  @CreatedResponse()
+  async createStream(
+    @Param("id") classroomId: string,
+    @Body() dto: CreateStreamDto,
     @GetUser() user: User,
   ) {
-    const payload = await this.classroomService.create(
-      createClassroomDto,
+    const payload = await this.classroomService.createStream(
+      dto,
+      classroomId,
       user,
     );
-    return new GenericResponse("Classroom created", payload);
+    return new GenericResponse("Stream created", payload);
   }
 
   @Get()
@@ -49,8 +59,8 @@ export class ClassroomController {
   @PageResponse()
   async findAll(
     @Query() paginationDto: PaginationDto,
-    @GetUser() user: User,
     @Query() findDto: FindClassroomsDto,
+    @GetUser() user: User,
   ) {
     const payload = await this.classroomService.findAll(
       user,
@@ -58,6 +68,40 @@ export class ClassroomController {
       findDto,
     );
     return new GenericResponse("Classrooms retrieved", payload);
+  }
+
+  @Get("streams")
+  @AllowRoles()
+  @PageResponse()
+  async findAllSStreams(
+    @Query() paginationDto: PaginationDto,
+    @Query() findDto: FindClassroomsDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.classroomService.findAllStreams(
+      user,
+      paginationDto,
+      findDto,
+    );
+    return new GenericResponse("Classrooms retrieved", payload);
+  }
+
+  @Get(":id/streams")
+  @AllowRoles()
+  @PageResponse()
+  async findClassroomStreams(
+    @Param("id") classroomId: string,
+    @Query() paginationDto: PaginationDto,
+    @Query() findDto: FindClassroomsDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.classroomService.findClassroomStreams(
+      user,
+      classroomId,
+      paginationDto,
+      findDto,
+    );
+    return new GenericResponse("Streams retrieved", payload);
   }
 
   @Patch(":id")
@@ -75,10 +119,42 @@ export class ClassroomController {
     return new GenericResponse("Classroom updated", payload);
   }
 
+  @Patch(":id/streams/:streamId")
+  @OkResponse()
+  async updateStream(
+    @Param("id") id: string,
+    @Param("streamId") streamId: string,
+    @Body() dto: UpdateStreamDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.classroomService.updateStream(
+      streamId,
+      id,
+      dto,
+      user,
+    );
+    return new GenericResponse("Stream updated", payload);
+  }
+
   @Delete(":id")
   @OkResponse()
   async remove(@Param("id") id: string, @GetUser() user: User) {
     const payload = await this.classroomService.remove(id, user);
     return new GenericResponse("Classroom deleted", payload);
+  }
+
+  @Delete(":id/streams/:streamId")
+  @OkResponse()
+  async removeStream(
+    @Param("id") id: string,
+    @Param("streamId") streamId: string,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.classroomService.removeStream(
+      streamId,
+      id,
+      user,
+    );
+    return new GenericResponse("Stream deleted", payload);
   }
 }

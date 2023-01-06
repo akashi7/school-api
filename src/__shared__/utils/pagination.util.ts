@@ -11,6 +11,7 @@ export async function paginate<TModel, TFindManyArgs>(
     take: size,
     skip: size * page,
   })) as TModel[];
+  args["include"] = null;
   const totalItems = await model.count({
     ...args,
   });
