@@ -1,9 +1,14 @@
-import { ClassSerializerInterceptor, Module } from "@nestjs/common";
+import {
+  ClassSerializerInterceptor,
+  Module,
+  ValidationPipe,
+} from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_FILTER, APP_INTERCEPTOR } from "@nestjs/core";
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { AuthModule } from "./auth/auth.module";
+import { ClassroomModule } from "./classroom/classroom.module";
 import { ParentModule } from "./parent/parent.module";
 import { PrismaModule } from "./prisma.module";
 import { SchoolModule } from "./school/school.module";
@@ -27,10 +32,18 @@ import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
     ParentModule,
     SchoolModule,
     TransactionModule,
+    ClassroomModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_PIPE,
+      useValue: new ValidationPipe({
+        whitelist: true,
+        // transform: true,
+      }),
+    },
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,

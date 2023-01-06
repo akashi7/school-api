@@ -94,12 +94,6 @@ export function configure(app: INestApplication): void {
   app.use(cookieParser());
   app.setGlobalPrefix("api/v1");
   app.enableCors(corsConfig());
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-    }),
-  );
   configureSwagger(app);
   const configService = app.get(ConfigService);
   const env = configService.get("env");

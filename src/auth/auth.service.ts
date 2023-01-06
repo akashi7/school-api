@@ -1,9 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { ERole, User } from "@prisma/client";
 import { PrismaService } from "../prisma.service";
-import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
 import {
   AdminLoginDto,
   ParentLoginDto,
@@ -18,7 +16,6 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly passwordEncryption: PasswordEncryption,
-    private readonly configService: ConfigService<IAppConfig>,
     private readonly prismaService: PrismaService,
   ) {}
 
@@ -28,6 +25,7 @@ export class AuthService {
       where: {
         email,
         role: ERole.ADMIN,
+        deletedAt: { isSet: false },
       },
     });
     if (!user)
