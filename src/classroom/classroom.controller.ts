@@ -54,7 +54,6 @@ export class ClassroomController {
     return new GenericResponse("Stream created", payload);
   }
 
-  // TODO Fix swagger not seeing the findDto properties
   @Get()
   @AllowRoles()
   @PageResponse()
