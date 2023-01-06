@@ -8,7 +8,7 @@ export abstract class CreateUserDto {
 }
 export class CreateStudentDto extends CreateUserDto {
   @IsString()
-  regNo: string;
+  studentId?: string; // Custom student id (student number)
   @IsString()
   schoolId: string;
   @IsString()

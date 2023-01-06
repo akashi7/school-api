@@ -49,13 +49,18 @@ export class SchoolService {
   }
 
   async findOne(id: string) {
-    const user = await this.prisma.user.findFirst({
+    const school = await this.prisma.user.findFirst({
       where: {
         id,
         role: ERole.SCHOOL,
       },
     });
-    if (!user) throw new NotFoundException("School not found");
-    return user;
+    if (!school) throw new NotFoundException("School not found");
+    return school;
+  }
+  async delete(id: string) {
+    const school = await this.findOne(id);
+    await this.prisma.user.delete({ where: { id: school.id } });
+    return id;
   }
 }
