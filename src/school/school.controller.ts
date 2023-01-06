@@ -3,12 +3,12 @@ import { ApiTags } from "@nestjs/swagger";
 import { ERole } from "@prisma/client";
 import { Protected } from "../auth/decorators/auth.decorator";
 import { AllowRoles } from "../auth/decorators/roles.decorator";
-import { CreateSchoolDto } from "../user/dto/create-user.dto";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
+import { CreateSchoolDto } from "./dto/create-school.dto";
 import { SchoolService } from "./school.service";
 
 @Controller("schools")
-@Protected()
+@Protected(ERole.ADMIN)
 @ApiTags("Schools")
 export class SchoolController {
   constructor(private readonly schoolService: SchoolService) {}

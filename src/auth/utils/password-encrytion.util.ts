@@ -8,7 +8,6 @@ export class PasswordEncryption {
   }
 
   comparePassword(pass: string, hash: string) {
-    console.log(pass, hash);
     const result = bcrypt.compareSync(pass, hash);
     return result;
   }

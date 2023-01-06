@@ -2,7 +2,8 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { ERole } from "@prisma/client";
 import { PasswordEncryption } from "../auth/utils/password-encrytion.util";
 import { PrismaService } from "../prisma.service";
-import { CreateSchoolDto } from "../user/dto/create-user.dto";
+import { CreateSchoolDto } from "./dto/create-school.dto";
+import { schoolFields } from "./dto/school-fields";
 
 @Injectable()
 export class SchoolService {
@@ -15,12 +16,10 @@ export class SchoolService {
     const payload = await this.prisma.user.create({
       data: {
         role: ERole.SCHOOL,
-        schoolName: dto.names,
-        username: dto.username,
-        phone: dto.phone,
-        schoolTitle: dto.schoolTitle,
+        ...dto,
         password: this.passwordEncryption.hashPassword(dto.password),
       },
+      select: { ...schoolFields },
     });
     return payload;
   }
@@ -31,18 +30,7 @@ export class SchoolService {
         role: ERole.SCHOOL,
       },
       select: {
-        id: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
-        schoolTitle: true,
-        phone: true,
-        schoolName: true,
-        countryName: true,
-        countryCode: true,
-        refreshToken: true,
-        active: true,
-        role: true,
+        ...schoolFields,
       },
     });
     return payload;
@@ -54,6 +42,7 @@ export class SchoolService {
         id,
         role: ERole.SCHOOL,
       },
+      select: { ...schoolFields },
     });
     if (!school) throw new NotFoundException("School not found");
     return school;

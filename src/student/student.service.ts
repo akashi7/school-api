@@ -19,7 +19,8 @@ export class StudentService {
     const result = await paginate<User, Prisma.UserFindManyArgs>(
       this.prisma.user,
       { where: { ...whereConditions } },
-      { page, size },
+      +page,
+      +size,
     );
     return result;
   }

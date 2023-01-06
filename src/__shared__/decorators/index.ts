@@ -32,7 +32,7 @@ export const PaginationParams = createParamDecorator(
   (_data, ctx: ExecutionContext): IPagination => {
     const req = ctx.switchToHttp().getRequest();
     return {
-      page: +req?.query?.page || 1,
+      page: +req?.query?.page || 0,
       size: +req?.query?.limit || 10,
     };
   },
