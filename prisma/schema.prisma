@@ -54,22 +54,21 @@ model User {
   role         ERole     @default(STUDENT)
   refreshToken String?
   active       Boolean   @default(true)
-  address      String?   @unique
+  address      String?
 
   // STUDENT
-  studentId          String?
+  studentIdentifier  String?
   fullName           String?
-  email              String?
+  email              String?        @unique
   passportPhoto      String?
   dob                DateTime?
   gender             EGender?
-  firstContactPhone  String?   @unique
-  secondContactPhone String?   @unique
+  firstContactPhone  String?
+  secondContactPhone String?
+  academicTerm       EAcademicTerm?
 
   academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
   academicYearId String?       @db.ObjectId
-
-  academicTerm EAcademicTerm?
 
   stream   Stream? @relation(fields: [streamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   streamId String? @db.ObjectId

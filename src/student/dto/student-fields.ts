@@ -1,13 +1,12 @@
-export const schoolFields = {
+export const studentFields = {
   id: true,
-  createdAt: true,
-  schoolName: true,
-  schoolTitle: true,
-  schoolLogo: true,
-  schoolType: true,
-  hasStudentIds: true,
-  username: true,
-  password: true,
-  countryName: true,
-  countryCode: true,
+  studentIdentifier: true,
+  fullName: true,
+  email: true,
+  passportPhoto: true,
+  dob: true,
+  gender: true,
+  firstContactPhone: true,
+  secondContactPhone: true,
+  academicTerm: true,
 };
