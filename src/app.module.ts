@@ -18,6 +18,8 @@ import { UserModule } from "./user/user.module";
 import { appConfig } from "./__shared__/config/app.config";
 import { GlobalExceptionFilter } from "./__shared__/filters/global-exception.filter";
 import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
+import { FeeModule } from './fee/fee.module';
+import { AcademicYearModule } from './academic-year/academic-year.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
     SchoolModule,
     TransactionModule,
     ClassroomModule,
+    FeeModule,
+    AcademicYearModule,
   ],
   controllers: [AppController],
   providers: [
