@@ -40,7 +40,7 @@ export class ClassroomService {
     return result;
   }
 
-  private async findOne(id: string, school?: User) {
+  async findOne(id: string, school?: User) {
     const classroom = await this.prisma.classroom.findFirst({
       where: school ? { schoolId: school.id, id } : { id },
     });
@@ -121,7 +121,7 @@ export class ClassroomService {
     return result;
   }
 
-  private async findOneStream(id: string, classroomId?: string, school?: User) {
+  async findOneStream(id: string, classroomId?: string, school?: User) {
     const stream = await this.prisma.stream.findFirst({
       where: school
         ? classroomId

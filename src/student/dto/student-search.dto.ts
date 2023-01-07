@@ -1,13 +1,12 @@
-import { IsOptional, IsString } from "class-validator";
+import { OptionalProperty } from "../../__shared__/decorators";
 
 export class StudentSearchDto {
-  @IsString()
-  @IsOptional()
-  school?: string;
-  @IsString()
-  @IsOptional()
-  academicYear?: string;
-  @IsString()
-  @IsOptional()
-  name?: string;
+  @OptionalProperty()
+  classroomId: string;
+  @OptionalProperty()
+  streamId: string;
+  @OptionalProperty()
+  academicYearId: string;
+  @OptionalProperty()
+  search: string;
 }

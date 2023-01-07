@@ -43,7 +43,7 @@ export class AuthService {
     });
     await this.prismaService.user.update({
       where: { id: user.id },
-      data: { refreshToken: refreshToken },
+      data: { refreshToken },
     });
 
     return {
@@ -69,7 +69,7 @@ export class AuthService {
     });
     await this.prismaService.user.update({
       where: { id: user.id },
-      data: { refreshToken: refreshToken },
+      data: { refreshToken },
     });
 
     return {
@@ -102,7 +102,7 @@ export class AuthService {
     });
     await this.prismaService.user.update({
       where: { id: user.id },
-      data: { refreshToken: refreshToken },
+      data: { refreshToken },
     });
 
     return {
@@ -113,11 +113,11 @@ export class AuthService {
   async studentLogin(
     dto: StudentLoginDto,
   ): Promise<{ accessToken: any; refreshToken: any }> {
-    const { countryCode, studentId } = dto;
+    const { countryCode, studentIdentifier } = dto;
     const user = await this.prismaService.user.findFirst({
       where: {
         countryCode,
-        studentId,
+        studentIdentifier,
         role: ERole.STUDENT,
       },
     });

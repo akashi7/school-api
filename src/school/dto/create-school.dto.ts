@@ -22,4 +22,6 @@ export class CreateSchoolDto {
   countryName: string;
   @IsISO31661Alpha2()
   countryCode: string;
+  @IsString()
+  address: string;
 }

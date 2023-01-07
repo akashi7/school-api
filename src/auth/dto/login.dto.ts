@@ -10,7 +10,7 @@ export class StudentLoginDto {
   @IsISO31661Alpha3()
   countryCode: string;
   @IsString()
-  studentId: string;
+  studentIdentifier: string;
 }
 export class ParentLoginDto {
   @IsString()

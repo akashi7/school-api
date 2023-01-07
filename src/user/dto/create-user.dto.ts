@@ -6,17 +6,6 @@ export abstract class CreateUserDto {
   @IsString()
   names: string;
 }
-export class CreateStudentDto extends CreateUserDto {
-  @IsString()
-  studentId?: string; // Custom student id (student number)
-  @IsString()
-  schoolId: string;
-  @IsString()
-  parentId: string;
-  @IsString()
-  academicYear: string;
-}
-
 export class CreateParentDto extends CreateUserDto {
   @IsPhoneNumber("RW")
   phone: string;
