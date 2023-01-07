@@ -134,7 +134,10 @@ export class StudentService {
             schoolId: school.id,
           }
         : { id, role: ERole.STUDENT },
-      include: { parent: { select: { id: true, phone: true } } },
+      select: {
+        ...studentFields,
+        parent: { select: { id: true, phone: true } },
+      },
     });
     if (!user) throw new NotFoundException("Student not found");
     return user;
@@ -156,10 +159,12 @@ export class StudentService {
   async update(id: string, dto: UpdateStudentDto, school: User) {
     await this.findOne(id, school);
     if (dto.academicYearId) {
-      const academicYear = await this.prisma.academicYear.findFirst({
-        where: { id: dto.academicYearId },
-      });
-      if (!academicYear) throw new NotFoundException("Academic year not found");
+      if (
+        !(await this.prisma.academicYear.count({
+          where: { id: dto.academicYearId },
+        }))
+      )
+        throw new NotFoundException("Academic year not found");
     }
     if (dto.streamId) {
       await this.classroomService.findOneStream(dto.streamId, null, school);

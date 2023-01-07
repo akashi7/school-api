@@ -49,6 +49,12 @@ export class StudentController {
     const payload = await this.studentService.findAll(dto, options, user);
     return new GenericResponse("Students retrieved", payload);
   }
+  @Get(":id")
+  @OkResponse()
+  async getStudent(@Param("id") id: string, @GetUser() user: User) {
+    const payload = await this.studentService.findOne(id, user);
+    return new GenericResponse("Student retrieved", payload);
+  }
 
   @Patch(":id")
   @OkResponse()
