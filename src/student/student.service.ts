@@ -17,7 +17,7 @@ import { UpdateStudentDto } from "./dto/update-student.dto";
 @Injectable()
 export class StudentService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prismaService: PrismaService,
     private readonly classroomService: ClassroomService,
   ) {}
 
@@ -50,7 +50,7 @@ export class StudentService {
       StudentPromotion,
       Prisma.StudentPromotionFindManyArgs
     >(
-      this.prisma.studentPromotion,
+      this.prismaService.studentPromotion,
       {
         where: { ...whereConditions },
         include: {
@@ -81,7 +81,7 @@ export class StudentService {
   }
 
   async create(dto: CreateStudentDto, school: User) {
-    return await this.prisma.$transaction(async (tx) => {
+    return await this.prismaService.$transaction(async (tx) => {
       let parent = await tx.user.findFirst({
         where: { phone: dto.parentPhoneNumber, role: ERole.PARENT },
       });
@@ -99,7 +99,7 @@ export class StudentService {
         where: { email: dto.email },
       });
       if (existingEmailStudent)
-        throw new BadRequestException("Email already exists");
+        throw new BadRequestException("Student email already exists");
       const newStudentId = school.hasStudentIds
         ? dto.studentIdentifier
         : await this.generateStudentId();
@@ -126,7 +126,7 @@ export class StudentService {
   }
 
   async findOne(id: string, school?: User) {
-    const user = await this.prisma.user.findFirst({
+    const user = await this.prismaService.user.findFirst({
       where: school
         ? {
             id,
@@ -146,7 +146,7 @@ export class StudentService {
   async generateStudentId() {
     const now = new Date();
     const id =
-      (await this.prisma.user.count({
+      (await this.prismaService.user.count({
         where: {
           role: ERole.STUDENT,
           createdAt: { gte: startOfMonth(now), lte: endOfMonth(now) },
@@ -160,7 +160,7 @@ export class StudentService {
     await this.findOne(id, school);
     if (dto.academicYearId) {
       if (
-        !(await this.prisma.academicYear.count({
+        !(await this.prismaService.academicYear.count({
           where: { id: dto.academicYearId },
         }))
       )
@@ -170,13 +170,13 @@ export class StudentService {
       await this.classroomService.findOneStream(dto.streamId, null, school);
     }
     if (dto.email) {
-      const existingEmailStudent = await this.prisma.user.findFirst({
+      const existingEmailStudent = await this.prismaService.user.findFirst({
         where: { id: { not: id }, email: dto.email },
       });
       if (existingEmailStudent)
         throw new BadRequestException("Email already exists");
     }
-    await this.prisma.user.update({
+    await this.prismaService.user.update({
       where: { id },
       data: {
         ...dto,
@@ -187,7 +187,7 @@ export class StudentService {
 
   async remove(id: string, school: User) {
     await this.findOne(id, school);
-    await this.prisma.user.delete({ where: { id } });
+    await this.prismaService.user.delete({ where: { id } });
     return id;
   }
 }

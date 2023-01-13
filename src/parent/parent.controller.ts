@@ -5,8 +5,8 @@ import { ApiTags } from "@nestjs/swagger";
 import { ERole } from "@prisma/client";
 import { Protected } from "../auth/decorators/auth.decorator";
 import { AllowRoles } from "../auth/decorators/roles.decorator";
-import { CreateParentDto } from "../user/dto/create-user.dto";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
+import { CreateParentDto } from "./dto/create-parent.dto";
 import { ParentService } from "./parent.service";
 
 @Controller("parents")
