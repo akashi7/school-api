@@ -1,18 +1,22 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { ERole } from "@prisma/client";
 import { PrismaService } from "../prisma.service";
-import { CreateParentDto } from "../user/dto/create-user.dto";
+import { CreateParentDto } from "./dto/create-parent.dto";
 
 @Injectable()
 export class ParentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   async create(dto: CreateParentDto) {
-    const payload = await this.prisma.user.create({
+    if (await this.prismaService.user.count({ where: { phone: dto.phone } }))
+      throw new BadRequestException("Phone number already exists");
+    const payload = await this.prismaService.user.create({
       data: {
         role: ERole.PARENT,
-        fullName: dto.names,
-        username: dto.username,
         phone: dto.phone,
       },
     });
@@ -20,7 +24,7 @@ export class ParentService {
   }
 
   async findAll() {
-    const payload = await this.prisma.user.findMany({
+    const payload = await this.prismaService.user.findMany({
       where: {
         role: ERole.PARENT,
       },
@@ -44,7 +48,7 @@ export class ParentService {
   }
 
   async findOne(id: string) {
-    const user = await this.prisma.user.findFirst({
+    const user = await this.prismaService.user.findFirst({
       where: {
         id,
         role: ERole.PARENT,

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { ERole } from "@prisma/client";
 import { PasswordEncryption } from "../auth/utils/password-encrytion.util";
 import { PrismaService } from "../prisma.service";
@@ -8,12 +12,16 @@ import { schoolFields } from "./dto/school-fields";
 @Injectable()
 export class SchoolService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prismaService: PrismaService,
     private readonly passwordEncryption: PasswordEncryption,
   ) {}
 
   async create(dto: CreateSchoolDto) {
-    const payload = await this.prisma.user.create({
+    if (
+      await this.prismaService.user.count({ where: { username: dto.username } })
+    )
+      throw new BadRequestException("School username already exists");
+    const payload = await this.prismaService.user.create({
       data: {
         role: ERole.SCHOOL,
         ...dto,
@@ -25,7 +33,7 @@ export class SchoolService {
   }
 
   async findAll() {
-    const payload = await this.prisma.user.findMany({
+    const payload = await this.prismaService.user.findMany({
       where: {
         role: ERole.SCHOOL,
       },
@@ -37,7 +45,7 @@ export class SchoolService {
   }
 
   async findOne(id: string) {
-    const school = await this.prisma.user.findFirst({
+    const school = await this.prismaService.user.findFirst({
       where: {
         id,
         role: ERole.SCHOOL,
@@ -49,7 +57,7 @@ export class SchoolService {
   }
   async delete(id: string) {
     const school = await this.findOne(id);
-    await this.prisma.user.delete({ where: { id: school.id } });
+    await this.prismaService.user.delete({ where: { id: school.id } });
     return id;
   }
 }

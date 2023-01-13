@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { Classroom, Prisma, Stream, User } from "@prisma/client";
 import { PrismaService } from "../prisma.service";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
@@ -11,9 +15,18 @@ import { UpdateStreamDto } from "./dto/update-stream.dto";
 
 @Injectable()
 export class ClassroomService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
   async create(dto: CreateClassroomDto, school: User) {
-    const newClassroom = await this.prisma.classroom.create({
+    if (
+      await this.prismaService.classroom.count({
+        where: {
+          schoolId: school.id,
+          name: { equals: dto.name, mode: "insensitive" },
+        },
+      })
+    )
+      throw new BadRequestException(`Classroom ${dto.name} already exists`);
+    const newClassroom = await this.prismaService.classroom.create({
       data: {
         name: dto.name,
         schoolId: school.id,
@@ -32,7 +45,7 @@ export class ClassroomService {
     if (findDto.search)
       whereConditions.name = { contains: findDto.search, mode: "insensitive" };
     const result = await paginate<Classroom, Prisma.ClassroomFindManyArgs>(
-      this.prisma.classroom,
+      this.prismaService.classroom,
       { where: { schoolId: school.id, ...whereConditions } },
       +page,
       +size,
@@ -41,7 +54,7 @@ export class ClassroomService {
   }
 
   async findOne(id: string, school?: User) {
-    const classroom = await this.prisma.classroom.findFirst({
+    const classroom = await this.prismaService.classroom.findFirst({
       where: school ? { schoolId: school.id, id } : { id },
     });
     if (!classroom) throw new NotFoundException("Classroom not found");
@@ -50,7 +63,7 @@ export class ClassroomService {
 
   async update(id: string, dto: UpdateClassroomDto, school: User) {
     const classroom = await this.findOne(id, school);
-    await this.prisma.classroom.update({
+    await this.prismaService.classroom.update({
       where: { id: classroom.id },
       data: {
         ...dto,
@@ -61,7 +74,7 @@ export class ClassroomService {
 
   async remove(id: string, school: User) {
     const classroom = await this.findOne(id, school);
-    await this.prisma.classroom.delete({ where: { id: classroom.id } });
+    await this.prismaService.classroom.delete({ where: { id: classroom.id } });
     return id;
   }
 
@@ -83,7 +96,7 @@ export class ClassroomService {
         },
       ];
     const result = await paginate<Stream, Prisma.StreamFindManyArgs>(
-      this.prisma.stream,
+      this.prismaService.stream,
       {
         where: { classroom: { schoolId: school.id }, ...whereConditions },
         include: { classroom: { select: { id: true, name: true } } },
@@ -110,7 +123,7 @@ export class ClassroomService {
         },
       ];
     const result = await paginate<Stream, Prisma.StreamFindManyArgs>(
-      this.prisma.stream,
+      this.prismaService.stream,
       {
         where: { classroom: { schoolId: school.id }, ...whereConditions },
         include: { classroom: { select: { id: true, name: true } } },
@@ -122,7 +135,7 @@ export class ClassroomService {
   }
 
   async findOneStream(id: string, classroomId?: string, school?: User) {
-    const stream = await this.prisma.stream.findFirst({
+    const stream = await this.prismaService.stream.findFirst({
       where: school
         ? classroomId
           ? { classroom: { schoolId: school.id }, id, classroomId }
@@ -137,13 +150,13 @@ export class ClassroomService {
 
   async removeStream(id: string, classroomId: string, school: User) {
     const stream = await this.findOneStream(id, classroomId, school);
-    await this.prisma.stream.delete({ where: { id: stream.id } });
+    await this.prismaService.stream.delete({ where: { id: stream.id } });
     return id;
   }
 
   async createStream(dto: CreateStreamDto, classroomId: string, school: User) {
     const classroom = await this.findOne(classroomId, school);
-    const newStream = await this.prisma.stream.create({
+    const newStream = await this.prismaService.stream.create({
       data: {
         name: dto.name,
         classroomId: classroom.id,
@@ -160,7 +173,7 @@ export class ClassroomService {
   ) {
     const stream = await this.findOneStream(id, classroomId, school);
     if (dto.classroomId) await this.findOne(dto.classroomId, school);
-    await this.prisma.stream.update({
+    await this.prismaService.stream.update({
       where: { id: stream.id },
       data: { ...dto },
     });

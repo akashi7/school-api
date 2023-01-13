@@ -9,9 +9,9 @@ import { UpdateFeeDto } from "./dto/update-fee.dto";
 
 @Injectable()
 export class FeeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
   async create(dto: CreateFeeDto, school: User) {
-    return await this.prisma.$transaction(async (tx) => {
+    return await this.prismaService.$transaction(async (tx) => {
       if (
         !(await tx.academicYear.count({
           where: { id: dto.academicYearId },
@@ -70,7 +70,7 @@ export class FeeService {
       ];
     if (findDto.type) whereConditions.type = findDto.type;
     const payload = await paginate<Fee, Prisma.FeeFindManyArgs>(
-      this.prisma.fee,
+      this.prismaService.fee,
       {
         where: { ...whereConditions },
         include: {
@@ -86,17 +86,18 @@ export class FeeService {
 
   // TODO Review this logic to get accurate results for optional fees
   async findFeesByStudent(id: string, school: User, dto: FindFeesByStudentDto) {
-    const studentPromotion = await this.prisma.studentPromotion.findFirst({
-      where: {
-        student: { schoolId: school.id },
-        studentId: id,
-        academicYearId: dto.academicYearId,
-      },
-      include: {
-        student: { select: { stream: { select: { classroomId: true } } } },
-      },
-    });
-    const fees = await this.prisma.fee.findMany({
+    const studentPromotion =
+      await this.prismaService.studentPromotion.findFirst({
+        where: {
+          student: { schoolId: school.id },
+          studentId: id,
+          academicYearId: dto.academicYearId,
+        },
+        include: {
+          student: { select: { stream: { select: { classroomId: true } } } },
+        },
+      });
+    const fees = await this.prismaService.fee.findMany({
       where: {
         classroom: {
           schoolId: school.id,
@@ -117,7 +118,7 @@ export class FeeService {
   }
 
   async findOne(id: string, school: User) {
-    const fee = await this.prisma.fee.findFirst({
+    const fee = await this.prismaService.fee.findFirst({
       where: { classroom: { schoolId: school.id }, id },
     });
     if (!fee) throw new NotFoundException("Fee not found");
@@ -130,7 +131,7 @@ export class FeeService {
 
     if (dto.academicYearId) {
       if (
-        !(await this.prisma.academicYear.count({
+        !(await this.prismaService.academicYear.count({
           where: { id: dto.academicYearId },
         }))
       )
@@ -138,13 +139,13 @@ export class FeeService {
     }
     if (dto.classroomId) {
       if (
-        !(await this.prisma.classroom.count({
+        !(await this.prismaService.classroom.count({
           where: { schoolId: school.id, id: dto.classroomId },
         }))
       )
         throw new NotFoundException("Classroom not found");
     }
-    await this.prisma.fee.update({
+    await this.prismaService.fee.update({
       where: {
         id,
       },
@@ -152,12 +153,12 @@ export class FeeService {
         ...dto,
       },
     });
-    return await this.prisma.fee.findFirst({ where: { id } });
+    return await this.prismaService.fee.findFirst({ where: { id } });
   }
 
   async remove(id: string, school: User) {
     await this.findOne(id, school);
-    await this.prisma.fee.delete({ where: { id } });
+    await this.prismaService.fee.delete({ where: { id } });
     return id;
   }
 }
