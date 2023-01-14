@@ -96,7 +96,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
           schoolType: ESchoolType.SECONDARY,
           hasStudentIds: false,
           username: "nestschool",
-          password: "Pass123!",
+          password: bcrypt.hashSync(process.env.ADMIN_PASSWORD, 10),
           countryName: "Rwanda",
           countryCode: "RW",
           address: "Kicukiro, Kigali",
@@ -133,6 +133,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
           academicYearId: academicYear.id,
           streamId: stream.id,
           parentId: this.parentId,
+          countryName: "Rwanda",
+          countryCode: "RW",
         },
       });
     }
