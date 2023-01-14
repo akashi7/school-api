@@ -1,6 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { EAcademicTerm, EGender } from "@prisma/client";
-import { IsEnum, IsOptional, IsPhoneNumber, IsString } from "class-validator";
+import {
+  IsEnum,
+  IsISO31661Alpha2,
+  IsOptional,
+  IsPhoneNumber,
+  IsString,
+} from "class-validator";
 
 export class CreateStudentDto {
   @IsString()
@@ -28,6 +34,10 @@ export class CreateStudentDto {
   @IsEnum(EAcademicTerm)
   @ApiProperty({ enum: EAcademicTerm })
   academicTerm: EAcademicTerm;
+  @IsString()
+  countryName: string;
+  @IsISO31661Alpha2()
+  countryCode: string;
   @IsString()
   academicYearId: string;
   @IsString()

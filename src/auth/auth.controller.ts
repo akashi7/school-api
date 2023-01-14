@@ -55,10 +55,7 @@ export class AuthController {
       sameSite: "none",
       secure: true,
     });
-    return {
-      message: "You have logged in successfully",
-      payload: { refreshToken },
-    };
+    return new GenericResponse("Admin logged in successfully");
   }
   @Post("/login/student")
   @OkResponse()
@@ -81,10 +78,7 @@ export class AuthController {
       sameSite: "none",
       secure: true,
     });
-    return {
-      message: "You have logged in successfully",
-      payload: { refreshToken },
-    };
+    return new GenericResponse("Student logged in successfully");
   }
 
   @Post("/login/school")
@@ -108,10 +102,7 @@ export class AuthController {
       sameSite: "none",
       secure: true,
     });
-    return {
-      message: "You have logged in successfully",
-      payload: { refreshToken },
-    };
+    return new GenericResponse("School logged in successfully");
   }
 
   @Post("/login/parent")
@@ -135,10 +126,7 @@ export class AuthController {
       sameSite: "none",
       secure: true,
     });
-    return {
-      message: "You have logged in successfully",
-      payload: { refreshToken },
-    };
+    return new GenericResponse("Parent logged in successfully");
   }
 
   @Get("/refresh-token")
@@ -149,18 +137,13 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
     @GetUser() user: User,
   ): Promise<GenericResponse<{ refreshToken: string }>> {
-    const { accessToken, refreshToken } = await this.authService.refreshToken(
-      user,
-    );
+    const { accessToken } = await this.authService.refreshToken(user);
     response.cookie("tss_jwt", accessToken, {
       httpOnly: true,
       sameSite: "none",
       secure: true,
     });
-    return {
-      message: "Token refreshed successfully",
-      payload: { refreshToken },
-    };
+    return new GenericResponse("Token refreshed successfully");
   }
 
   @Get("/logout")
@@ -173,8 +156,6 @@ export class AuthController {
     await this.authService.logout(user);
     response.clearCookie("tss_jwt");
     response.clearCookie("tss_refresh_jwt");
-    return {
-      message: "Logged out successfully",
-    };
+    return new GenericResponse("Logged out successfully");
   }
 }

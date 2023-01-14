@@ -1,4 +1,4 @@
-import { IsISO31661Alpha2, IsISO31661Alpha3, IsString } from "class-validator";
+import { IsISO31661Alpha2, IsString } from "class-validator";
 
 export class AdminLoginDto {
   @IsString()
@@ -7,7 +7,7 @@ export class AdminLoginDto {
   password: string;
 }
 export class StudentLoginDto {
-  @IsISO31661Alpha3()
+  @IsISO31661Alpha2()
   countryCode: string;
   @IsString()
   studentIdentifier: string;
