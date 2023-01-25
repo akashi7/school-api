@@ -8,7 +8,7 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { ApiCookieAuth, ApiTags } from "@nestjs/swagger";
+import { ApiCookieAuth, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { User } from "@prisma/client";
 import { Response } from "express";
 import {
@@ -40,22 +40,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async adminLogin(
     @Body() dto: AdminLoginDto,
-    @Res({ passthrough: true }) response: Response,
   ): Promise<GenericResponse<{ refreshToken: string }>> {
     const { accessToken, refreshToken } = await this.authService.adminLogin(
       dto,
     );
-    response.cookie("nestpay_jwt", accessToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
+    return new GenericResponse("Admin logged in successfully", {
+      accessToken,
+      refreshToken,
     });
-    response.cookie("nestpay_refresh_jwt", refreshToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-    });
-    return new GenericResponse("Admin logged in successfully");
   }
   @Post("/login/student")
   @OkResponse()
@@ -63,22 +55,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async studentLogin(
     @Body() dto: StudentLoginDto,
-    @Res({ passthrough: true }) response: Response,
   ): Promise<GenericResponse<{ refreshToken: string }>> {
     const { accessToken, refreshToken } = await this.authService.studentLogin(
       dto,
     );
-    response.cookie("nestpay_jwt", accessToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
+    return new GenericResponse("Student logged in successfully", {
+      accessToken,
+      refreshToken,
     });
-    response.cookie("nestpay_refresh_jwt", refreshToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-    });
-    return new GenericResponse("Student logged in successfully");
   }
 
   @Post("/login/school")
@@ -87,22 +71,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async schoolLogin(
     @Body() dto: SchoolLoginDto,
-    @Res({ passthrough: true }) response: Response,
   ): Promise<GenericResponse<{ refreshToken: string }>> {
     const { accessToken, refreshToken } = await this.authService.schoolLogin(
       dto,
     );
-    response.cookie("nestpay_jwt", accessToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
+    return new GenericResponse("School logged in successfully", {
+      accessToken,
+      refreshToken,
     });
-    response.cookie("nestpay_refresh_jwt", refreshToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-    });
-    return new GenericResponse("School logged in successfully");
   }
 
   @Post("/login/parent")
@@ -111,39 +87,31 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async parentLogin(
     @Body() dto: ParentLoginDto,
-    @Res({ passthrough: true }) response: Response,
   ): Promise<GenericResponse<{ refreshToken: string }>> {
     const { accessToken, refreshToken } = await this.authService.parentLogin(
       dto,
     );
-    response.cookie("nestpay_jwt", accessToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
+    return new GenericResponse("Parent logged in successfully", {
+      accessToken,
+      refreshToken,
     });
-    response.cookie("nestpay_refresh_jwt", refreshToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-    });
-    return new GenericResponse("Parent logged in successfully");
   }
 
   @Get("/refresh-token")
   @OkResponse()
-  @ApiCookieAuth()
+  @ApiSecurity("refresh")
   @UseGuards(JwtRefreshGuard)
   async refreshToken(
     @Res({ passthrough: true }) response: Response,
     @GetUser() user: User,
   ): Promise<GenericResponse<{ refreshToken: string }>> {
-    const { accessToken } = await this.authService.refreshToken(user);
-    response.cookie("tss_jwt", accessToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
+    const { accessToken, refreshToken } = await this.authService.refreshToken(
+      user,
+    );
+    return new GenericResponse("Token refreshed successfully", {
+      accessToken,
+      refreshToken,
     });
-    return new GenericResponse("Token refreshed successfully");
   }
 
   @Get("/logout")
@@ -154,8 +122,6 @@ export class AuthController {
     @GetUser() user: User,
   ): Promise<GenericResponse<void>> {
     await this.authService.logout(user);
-    response.clearCookie("tss_jwt");
-    response.clearCookie("tss_refresh_jwt");
     return new GenericResponse("Logged out successfully");
   }
 }

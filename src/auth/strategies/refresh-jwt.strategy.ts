@@ -16,7 +16,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
   constructor(private configService: ConfigService<IAppConfig>) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => request?.cookies?.nestpay_refresh_jwt,
+        (request: Request) => request?.headers?.nestpay_refresh_jwt,
       ]),
       secretOrKey: configService.get("jwt").secret,
       passReqToCallback: true,

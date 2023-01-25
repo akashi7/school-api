@@ -3,7 +3,6 @@ import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
 import { PrismaClient, User } from "@prisma/client";
 import "dotenv/config";
-import { Request } from "express";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { IAppConfig } from "../../__shared__/interfaces/app-config.interface";
 import { JwtPayload } from "../interfaces/jwt.payload.interface";
@@ -12,10 +11,7 @@ import { JwtPayload } from "../interfaces/jwt.payload.interface";
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private configService: ConfigService<IAppConfig>) {
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request): string => request?.cookies?.nestpay_jwt,
-      ]),
-      ignoreExpiration: false,
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: configService.get("jwt").secret,
     });
   }
