@@ -37,6 +37,11 @@ export function configureSwagger(app: INestApplication): void {
     .setTitle(API_TITLE)
     .setDescription(API_DESCRIPTION)
     .setVersion(API_VERSION)
+    .addBearerAuth()
+    .addApiKey(
+      { name: "nestpay_refresh_jwt", in: "header", type: "apiKey" },
+      "refresh",
+    )
     .build();
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup(SWAGGER_URL, app, document, {
