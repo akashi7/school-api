@@ -19,17 +19,17 @@ import { tap } from "rxjs/operators";
 export class AuditInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
+    const response = context.switchToHttp().getResponse();
     const { method, url } = request;
+    const { statusCode } = response;
     const now = Date.now();
-    Logger.log(
-      `User is attempting to make a request to: ${url} ${method}`,
-      context.getClass().name,
-    );
     return next.handle().pipe(
       tap(() => {
         const duration = Date.now() - now;
         Logger.log(
-          `User successfully made a request to:${url} ${method} ${duration}ms`,
+          `${statusCode} ${method} ${url} by ${
+            request?.user?.fullName || request?.user?.schoolName || "anonymous"
+          } ${duration}ms`,
           context.getClass().name,
         );
       }),
