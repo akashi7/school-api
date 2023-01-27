@@ -38,6 +38,7 @@ export class AcademicYearController {
   }
 
   @Get()
+  @Protected()
   @PageResponse()
   async findAll(@Query() paginationDto: PaginationDto) {
     const payload = await this.academicYearService.findAll(paginationDto);

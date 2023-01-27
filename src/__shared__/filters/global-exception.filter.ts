@@ -11,7 +11,6 @@ import { Response } from "express";
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost): void {
-    const TAG = "GlobalExceptionFilter";
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
@@ -29,7 +28,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? (exceptionResponse as Record<string, unknown>)
         : { message: exceptionResponse };
 
-    Logger.error(`${request.url} ${request.method}`, exception.stack, TAG);
+    Logger.error(
+      `${status} ${request.method} ${request.url} by ${
+        (request as any)?.user?.fullName ||
+        (request as any)?.user?.schoolName ||
+        "anonymous"
+      }`,
+      exception.stack,
+      GlobalExceptionFilter.name,
+    );
 
     response.status(status).json({
       ...this.formatError(error),
