@@ -21,6 +21,7 @@ import {
 } from "../__shared__/decorators";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { IPagination } from "../__shared__/interfaces/pagination.interface";
+import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
 import { StudentSearchDto } from "./dto/student-search.dto";
 import { UpdateStudentDto } from "./dto/update-student.dto";
@@ -71,5 +72,15 @@ export class StudentController {
   async remove(@Param("id") id: string, @GetUser() user: User) {
     const payload = await this.studentService.remove(id, user);
     return new GenericResponse("Student deleted", payload);
+  }
+  @Post(":id/promotions")
+  @CreatedResponse()
+  async createPromotion(
+    @Param("id") id: string,
+    dto: CreatePromotionDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.studentService.createPromotion(id, dto, user);
+    return new GenericResponse("Promotion created", payload);
   }
 }

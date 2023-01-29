@@ -9,6 +9,7 @@ import { ClassroomService } from "../classroom/classroom.service";
 import { PrismaService } from "../prisma.service";
 import { IPagination } from "../__shared__/interfaces/pagination.interface";
 import { paginate } from "../__shared__/utils/pagination.util";
+import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
 import { studentFields } from "./dto/student-fields";
 import { StudentSearchDto } from "./dto/student-search.dto";
@@ -189,5 +190,23 @@ export class StudentService {
     await this.findOne(id, school);
     await this.prismaService.user.delete({ where: { id } });
     return id;
+  }
+  async createPromotion(id: string, dto: CreatePromotionDto, school: User) {
+    await this.findOne(id, school);
+    const academicYear = await this.prismaService.academicYear.findFirst({
+      where: { id: dto.academicYearId },
+    });
+    if (!academicYear) throw new NotFoundException("Academic year not found");
+    const stream = await this.prismaService.stream.findFirst({
+      where: { id: dto.streamId },
+    });
+    if (!stream) throw new NotFoundException("Stream not found");
+    return await this.prismaService.studentPromotion.create({
+      data: {
+        studentId: id,
+        academicYearId: dto.academicYearId,
+        streamId: dto.streamId,
+      },
+    });
   }
 }
