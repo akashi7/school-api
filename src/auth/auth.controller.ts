@@ -8,7 +8,7 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { ApiCookieAuth, ApiSecurity, ApiTags } from "@nestjs/swagger";
+import { ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { User } from "@prisma/client";
 import { Response } from "express";
 import {
@@ -19,7 +19,7 @@ import {
 } from "../__shared__/decorators";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { AuthService } from "./auth.service";
-import { Protected } from "./decorators/auth.decorator";
+import { Auth } from "./decorators/auth.decorator";
 import { GetUser } from "./decorators/get-user.decorator";
 import {
   AdminLoginDto,
@@ -116,7 +116,7 @@ export class AuthController {
 
   @Get("/logout")
   @OkResponse()
-  @Protected()
+  @Auth()
   async logout(
     @Res({ passthrough: true }) response: Response,
     @GetUser() user: User,

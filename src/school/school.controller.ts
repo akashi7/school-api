@@ -1,14 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole } from "@prisma/client";
-import { Protected } from "../auth/decorators/auth.decorator";
+import { Auth } from "../auth/decorators/auth.decorator";
 import { AllowRoles } from "../auth/decorators/roles.decorator";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { CreateSchoolDto } from "./dto/create-school.dto";
 import { SchoolService } from "./school.service";
 
 @Controller("schools")
-@Protected(ERole.ADMIN)
+@Auth(ERole.ADMIN)
 @ApiTags("Schools")
 export class SchoolController {
   constructor(private readonly schoolService: SchoolService) {}
