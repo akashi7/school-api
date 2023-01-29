@@ -164,17 +164,6 @@ export class StudentService {
 
   async update(id: string, dto: UpdateStudentDto, school: User) {
     await this.findOne(id, school);
-    if (dto.academicYearId) {
-      if (
-        !(await this.prismaService.academicYear.count({
-          where: { id: dto.academicYearId },
-        }))
-      )
-        throw new NotFoundException("Academic year not found");
-    }
-    if (dto.streamId) {
-      await this.classroomService.findOneStream(dto.streamId, null, school);
-    }
     if (dto.email) {
       const existingEmailStudent = await this.prismaService.user.findFirst({
         where: { id: { not: id }, email: dto.email },
@@ -207,12 +196,21 @@ export class StudentService {
     });
     if (!academicYear) throw new NotFoundException("Academic year not found");
     await this.classroomService.findOneStream(dto.streamId, null, school);
-    return await this.prismaService.studentPromotion.create({
-      data: {
-        studentId,
-        academicYearId: dto.academicYearId,
-        streamId: dto.streamId,
-      },
+    return await this.prismaService.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: studentId },
+        data: {
+          academicYearId: dto.academicYearId,
+          streamId: dto.streamId,
+        },
+      });
+      return await tx.studentPromotion.create({
+        data: {
+          studentId,
+          academicYearId: dto.academicYearId,
+          streamId: dto.streamId,
+        },
+      });
     });
   }
   async updatePromotion(
