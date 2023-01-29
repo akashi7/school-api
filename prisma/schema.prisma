@@ -198,5 +198,4 @@ model StudentExtraFee {
   studentId String?   @db.ObjectId
   fee       Fee?      @relation(fields: [feeId], references: [id])
   feeId     String?   @db.ObjectId
-  quantity  Int?
 }
