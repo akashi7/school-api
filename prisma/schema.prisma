@@ -188,7 +188,6 @@ model StudentPromotion {
   academicYearId String?       @db.ObjectId
 }
 
-// TODO Review this model
 model StudentExtraFee {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
   createdAt DateTime  @default(now())
