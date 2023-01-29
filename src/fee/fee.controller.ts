@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
-import { Protected } from "../auth/decorators/auth.decorator";
+import { Auth } from "../auth/decorators/auth.decorator";
 import { GetUser } from "../auth/decorators/get-user.decorator";
 import { CreatedResponse, PageResponse } from "../__shared__/decorators";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
@@ -21,7 +21,7 @@ import { UpdateFeeDto } from "./dto/update-fee.dto";
 import { FeeService } from "./fee.service";
 
 @Controller("fees")
-@Protected(ERole.SCHOOL)
+@Auth(ERole.SCHOOL)
 @ApiTags("Fees")
 export class FeeController {
   constructor(private readonly feeService: FeeService) {}

@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
-import { Protected } from "../auth/decorators/auth.decorator";
+import { Auth } from "../auth/decorators/auth.decorator";
 import { GetUser } from "../auth/decorators/get-user.decorator";
 import {
   CreatedResponse,
@@ -30,7 +30,7 @@ import { UpdateStudentDto } from "./dto/update-student.dto";
 import { StudentService } from "./student.service";
 
 @Controller("students")
-@Protected(ERole.SCHOOL)
+@Auth(ERole.SCHOOL)
 @ApiTags("Students")
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}

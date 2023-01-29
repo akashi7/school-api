@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
-import { Protected } from "../auth/decorators/auth.decorator";
+import { Auth } from "../auth/decorators/auth.decorator";
 import { GetUser } from "../auth/decorators/get-user.decorator";
 import { AllowRoles } from "../auth/decorators/roles.decorator";
 import {
@@ -28,7 +28,7 @@ import { UpdateClassroomDto } from "./dto/update-classroom.dto";
 import { UpdateStreamDto } from "./dto/update-stream.dto";
 
 @Controller("classrooms")
-@Protected(ERole.SCHOOL)
+@Auth(ERole.SCHOOL)
 @ApiTags("Classrooms")
 export class ClassroomController {
   constructor(private readonly classroomService: ClassroomService) {}

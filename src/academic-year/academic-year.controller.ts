@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole } from "@prisma/client";
-import { Protected } from "../auth/decorators/auth.decorator";
+import { Auth } from "../auth/decorators/auth.decorator";
 import {
   CreatedResponse,
   OkResponse,
@@ -23,7 +23,7 @@ import { CreateAcademicYearDto } from "./dto/create-academic-year.dto";
 import { UpdateAcademicYearDto } from "./dto/update-academic-year.dto";
 
 @Controller("academic-years")
-@Protected(ERole.ADMIN)
+@Auth(ERole.ADMIN)
 @ApiTags("Academic years")
 export class AcademicYearController {
   constructor(private readonly academicYearService: AcademicYearService) {}
@@ -38,7 +38,7 @@ export class AcademicYearController {
   }
 
   @Get()
-  @Protected()
+  @Auth()
   @PageResponse()
   async findAll(@Query() paginationDto: PaginationDto) {
     const payload = await this.academicYearService.findAll(paginationDto);
