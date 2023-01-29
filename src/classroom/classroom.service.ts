@@ -85,7 +85,8 @@ export class ClassroomService {
     findDto: FindClassroomsDto,
   ) {
     const whereConditions: Prisma.StreamWhereInput = { classroomId };
-    if (findDto.schoolId) whereConditions.classroom.schoolId = findDto.schoolId; // Override finding by current logged in school if the id is provided
+    if (findDto.schoolId)
+      whereConditions.classroom = { schoolId: findDto.schoolId }; // Override finding by current logged in school if the id is provided
     if (findDto.search)
       whereConditions.OR = [
         { name: { contains: findDto.search, mode: "insensitive" } },
@@ -112,7 +113,8 @@ export class ClassroomService {
     findDto: FindClassroomsDto,
   ) {
     const whereConditions: Prisma.StreamWhereInput = {};
-    if (findDto.schoolId) whereConditions.classroom.schoolId = findDto.schoolId; // Override finding by current logged in school if the id is provided
+    if (findDto.schoolId)
+      whereConditions.classroom = { schoolId: findDto.schoolId }; // Override finding by current logged in school if the id is provided
     if (findDto.search)
       whereConditions.OR = [
         { name: { contains: findDto.search, mode: "insensitive" } },
