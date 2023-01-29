@@ -59,9 +59,6 @@ export class FeeService {
             name: { contains: findDto.search, mode: "insensitive" },
           },
         },
-        // {
-        //   academicTerms: { has: search as EAcademicTerm },
-        // },
         {
           academicYear: {
             name: { contains: findDto.search, mode: "insensitive" },
@@ -69,6 +66,10 @@ export class FeeService {
         },
       ];
     if (findDto.type) whereConditions.type = findDto.type;
+    if (findDto.academicYearId)
+      whereConditions.academicYearId = findDto.academicYearId;
+    if (findDto.classroomId) whereConditions.classroomId = findDto.classroomId;
+    if (findDto.term) whereConditions.academicTerms = { has: findDto.term };
     const payload = await paginate<Fee, Prisma.FeeFindManyArgs>(
       this.prismaService.fee,
       {

@@ -18,4 +18,10 @@ export class FindFeesDto {
   @OptionalProperty({ enum: EFeeType })
   @IsEnum(EFeeType)
   type?: EFeeType;
+  @OptionalProperty()
+  classroomId?: string;
+  @OptionalProperty({ enum: EAcademicTerm })
+  term?: EAcademicTerm;
+  @OptionalProperty()
+  academicYearId?: string;
 }
