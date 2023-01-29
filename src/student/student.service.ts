@@ -33,7 +33,10 @@ export class StudentService {
       student: { schoolId: school.id },
     };
     if (dto.academicYearId) whereConditions.academicYearId = dto.academicYearId;
-    if (dto.classroomId) whereConditions.stream.classroom.id = dto.classroomId;
+    if (dto.classroomId)
+      whereConditions.stream = {
+        classroomId: dto.classroomId,
+      };
     if (dto.streamId) whereConditions.streamId = dto.classroomId;
     if (dto.search)
       whereConditions.OR = [
