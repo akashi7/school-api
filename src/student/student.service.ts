@@ -9,10 +9,12 @@ import { ClassroomService } from "../classroom/classroom.service";
 import { PrismaService } from "../prisma.service";
 import { IPagination } from "../__shared__/interfaces/pagination.interface";
 import { paginate } from "../__shared__/utils/pagination.util";
+import { CreateExtraFeeDto } from "./dto/create-extra-fee.dto";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
 import { studentFields } from "./dto/student-fields";
 import { StudentSearchDto } from "./dto/student-search.dto";
+import { UpdatePromotionDto } from "./dto/update-promotion.dto";
 import { UpdateStudentDto } from "./dto/update-student.dto";
 
 @Injectable()
@@ -191,22 +193,101 @@ export class StudentService {
     await this.prismaService.user.delete({ where: { id } });
     return id;
   }
-  async createPromotion(id: string, dto: CreatePromotionDto, school: User) {
-    await this.findOne(id, school);
+  async createPromotion(
+    studentId: string,
+    dto: CreatePromotionDto,
+    school: User,
+  ) {
+    await this.findOne(studentId, school);
     const academicYear = await this.prismaService.academicYear.findFirst({
       where: { id: dto.academicYearId },
     });
     if (!academicYear) throw new NotFoundException("Academic year not found");
-    const stream = await this.prismaService.stream.findFirst({
-      where: { id: dto.streamId },
-    });
-    if (!stream) throw new NotFoundException("Stream not found");
+    await this.classroomService.findOneStream(dto.streamId, null, school);
     return await this.prismaService.studentPromotion.create({
       data: {
-        studentId: id,
+        studentId,
         academicYearId: dto.academicYearId,
         streamId: dto.streamId,
       },
     });
+  }
+  async updatePromotion(
+    studentId: string,
+    studentPromotionId: string,
+    dto: UpdatePromotionDto,
+    school: User,
+  ) {
+    await this.findOne(studentId, school);
+    const studentPromotion =
+      await this.prismaService.studentPromotion.findFirst({
+        where: { id: studentPromotionId, studentId: studentId },
+      });
+    if (!studentPromotion)
+      throw new NotFoundException("Student promotion not found");
+    if (dto.academicYearId) {
+      if (
+        !(await this.prismaService.academicYear.count({
+          where: { id: dto.academicYearId },
+        }))
+      )
+        throw new NotFoundException("Academic year not found");
+    }
+    if (dto.streamId) {
+      await this.classroomService.findOneStream(dto.streamId, null, school);
+    }
+
+    await this.prismaService.studentPromotion.update({
+      where: { id: studentPromotion.id },
+      data: {
+        ...dto,
+      },
+    });
+    return await this.prismaService.studentPromotion.findFirst({
+      where: { id: studentPromotionId, studentId: studentId },
+    });
+  }
+  async deletePromotion(
+    studentId: string,
+    studentPromotionId: string,
+    school: User,
+  ) {
+    await this.findOne(studentId, school);
+    const studentPromotion =
+      await this.prismaService.studentPromotion.findFirst({
+        where: { id: studentPromotionId, studentId: studentId },
+      });
+    if (!studentPromotion)
+      throw new NotFoundException("Student promotion not found");
+
+    await this.prismaService.studentPromotion.delete({
+      where: { id: studentPromotion.id },
+    });
+    return studentPromotionId;
+  }
+  async createExtraFee(
+    studentId: string,
+    dto: CreateExtraFeeDto,
+    school: User,
+  ) {
+    await this.findOne(studentId, school);
+    const fee = await this.prismaService.fee.findFirst({
+      where: { id: dto.feeId, classroom: { schoolId: school.id } },
+    });
+    if (!fee) throw new NotFoundException("Fee not found");
+    return await this.prismaService.studentExtraFee.create({
+      data: { feeId: dto.feeId, studentId },
+    });
+  }
+  async deleteExtraFee(studentId: string, extraFeeId: string, school: User) {
+    await this.findOne(studentId, school);
+    const extraFee = await this.prismaService.studentExtraFee.findFirst({
+      where: { id: extraFeeId, studentId: studentId },
+    });
+    if (!extraFee) throw new NotFoundException("Extra fee not found");
+    await this.prismaService.studentExtraFee.delete({
+      where: { id: extraFee.id },
+    });
+    return extraFeeId;
   }
 }

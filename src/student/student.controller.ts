@@ -21,9 +21,11 @@ import {
 } from "../__shared__/decorators";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { IPagination } from "../__shared__/interfaces/pagination.interface";
+import { CreateExtraFeeDto } from "./dto/create-extra-fee.dto";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
 import { StudentSearchDto } from "./dto/student-search.dto";
+import { UpdatePromotionDto } from "./dto/update-promotion.dto";
 import { UpdateStudentDto } from "./dto/update-student.dto";
 import { StudentService } from "./student.service";
 
@@ -82,5 +84,60 @@ export class StudentController {
   ) {
     const payload = await this.studentService.createPromotion(id, dto, user);
     return new GenericResponse("Promotion created", payload);
+  }
+  @Patch(":studentId/promotions/:promotionId")
+  @OkResponse()
+  async updatePromotion(
+    @Param("studentId") studentId: string,
+    @Param("promotionId") promotionId: string,
+    dto: UpdatePromotionDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.studentService.updatePromotion(
+      studentId,
+      promotionId,
+      dto,
+      user,
+    );
+    return new GenericResponse("Promotion updated", payload);
+  }
+  @Delete(":studentId/promotions/:promotionId")
+  @OkResponse()
+  async deletePromotion(
+    @Param("studentId") studentId: string,
+    @Param("promotionId") promotionId: string,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.studentService.deletePromotion(
+      studentId,
+      promotionId,
+      user,
+    );
+    return new GenericResponse("Promotion deleted", payload);
+  }
+
+  @Post(":id/extra-fees")
+  @CreatedResponse()
+  async createExtraFee(
+    @Param("id") id: string,
+    dto: CreateExtraFeeDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.studentService.createExtraFee(id, dto, user);
+    return new GenericResponse("Extra fee created", payload);
+  }
+  @Delete(":studentId/extra-fees/:extraFeeId")
+  @OkResponse()
+  async deleteExtraFee(
+    @Param("studentId") studentId: string,
+    @Param("extraFeeId") extraFeeId: string,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.studentService.deleteExtraFee(
+      studentId,
+      extraFeeId,
+      user,
+    );
+    return new GenericResponse("Extra fee deleted", payload);
   }
 }
