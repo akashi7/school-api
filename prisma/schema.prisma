@@ -81,7 +81,7 @@ model User {
 
   studentPromotions StudentPromotion[]
 
-  studentAdditionalFees StudentAdditionalFee[]
+  studentExtraFees StudentExtraFee[]
 
   // SCHOOL
   schoolName    String?
@@ -159,20 +159,20 @@ model Stream {
 
 // TODO Review this model
 model Fee {
-  id                    String                 @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @default(now())
-  deletedAt             DateTime?
-  name                  String?
-  classroom             Classroom?             @relation(fields: [classroomId], references: [id])
-  classroomId           String?                @db.ObjectId
-  academicYear          AcademicYear?          @relation(fields: [academicYearId], references: [id])
-  academicYearId        String?                @db.ObjectId
-  academicTerms         EAcademicTerm[]
-  optional              Boolean                @default(false)
-  type                  EFeeType?
-  amount                Float?
-  studentAdditionalFees StudentAdditionalFee[]
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now())
+  deletedAt        DateTime?
+  name             String?
+  classroom        Classroom?        @relation(fields: [classroomId], references: [id])
+  classroomId      String?           @db.ObjectId
+  academicYear     AcademicYear?     @relation(fields: [academicYearId], references: [id])
+  academicYearId   String?           @db.ObjectId
+  academicTerms    EAcademicTerm[]
+  optional         Boolean           @default(false)
+  type             EFeeType?
+  amount           Float?
+  studentExtraFees StudentExtraFee[]
 }
 
 model StudentPromotion {
@@ -189,7 +189,7 @@ model StudentPromotion {
 }
 
 // TODO Review this model
-model StudentAdditionalFee {
+model StudentExtraFee {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now())
