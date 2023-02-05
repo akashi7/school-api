@@ -83,7 +83,7 @@ export class AuthService {
     const { countryCode, password, username } = dto;
     const user = await this.prismaService.user.findFirst({
       where: {
-        countryCode,
+        school: { countryCode },
         username,
         role: ERole.SCHOOL,
       },

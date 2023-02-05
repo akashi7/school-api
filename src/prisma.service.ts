@@ -89,21 +89,29 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         where: { role: ERole.SCHOOL, username: "nestschool" },
       }))
     ) {
-      await this.user.create({
-        data: {
-          role: ERole.SCHOOL,
-          schoolName: "Nest School",
-          schoolTitle: "Nest International School",
-          schoolLogo:
-            "https://veceltest-ivory.vercel.app/static/media/logo.404f54264269e58d523c.png",
-          schoolType: ESchoolType.SECONDARY,
-          hasStudentIds: false,
-          username: "nestschool",
-          password: bcrypt.hashSync(process.env.ADMIN_PASSWORD, 10),
-          countryName: "Rwanda",
-          countryCode: "RW",
-          address: "Kicukiro, Kigali",
-        },
+      await this.$transaction(async (tx) => {
+        const school = await tx.school.create({
+          data: {
+            schoolName: "Nest School",
+            schoolTitle: "Nest International School",
+            schoolLogo:
+              "https://veceltest-ivory.vercel.app/static/media/logo.404f54264269e58d523c.png",
+            schoolType: ESchoolType.SECONDARY,
+            hasStudentIds: false,
+            countryName: "Rwanda",
+            countryCode: "RW",
+            address: "Kicukiro, Kigali",
+          },
+        });
+        this.schoolId = school.id;
+        await tx.user.create({
+          data: {
+            role: ERole.SCHOOL,
+            username: "nestschool",
+            password: bcrypt.hashSync(process.env.ADMIN_PASSWORD, 10),
+            schoolId: school.id,
+          },
+        });
       });
     }
   }
@@ -138,6 +146,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
           parentId: this.parentId,
           countryName: "Rwanda",
           countryCode: "RW",
+          schoolId: this.schoolId,
         },
       });
     }

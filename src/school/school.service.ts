@@ -20,23 +20,28 @@ export class SchoolService {
     if (
       await this.prismaService.user.count({ where: { username: dto.username } })
     )
-      throw new BadRequestException("School username already exists");
-    const payload = await this.prismaService.user.create({
-      data: {
-        role: ERole.SCHOOL,
-        ...dto,
-        password: this.passwordEncryption.hashPassword(dto.password),
-      },
-      select: { ...schoolFields },
+      throw new BadRequestException("Username already exists");
+    return this.prismaService.$transaction(async (tx) => {
+      const newSchool = await tx.school.create({
+        data: {
+          ...dto,
+        },
+      });
+      await tx.user.create({
+        data: {
+          role: ERole.SCHOOL,
+          ...dto,
+          password: this.passwordEncryption.hashPassword(dto.password),
+          schoolId: newSchool.id,
+        },
+        select: { ...schoolFields },
+      });
+      return newSchool;
     });
-    return payload;
   }
 
   async findAll() {
-    const payload = await this.prismaService.user.findMany({
-      where: {
-        role: ERole.SCHOOL,
-      },
+    const payload = await this.prismaService.school.findMany({
       select: {
         ...schoolFields,
       },
@@ -45,10 +50,9 @@ export class SchoolService {
   }
 
   async findOne(id: string) {
-    const school = await this.prismaService.user.findFirst({
+    const school = await this.prismaService.school.findFirst({
       where: {
         id,
-        role: ERole.SCHOOL,
       },
       select: { ...schoolFields },
     });
@@ -57,7 +61,7 @@ export class SchoolService {
   }
   async delete(id: string) {
     const school = await this.findOne(id);
-    await this.prismaService.user.delete({ where: { id: school.id } });
+    await this.prismaService.school.delete({ where: { id: school.id } });
     return id;
   }
 }

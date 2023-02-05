@@ -56,6 +56,10 @@ model User {
   active       Boolean   @default(true)
   address      String?
 
+  // SCHOOL ADMIN
+  username String?
+  password String?
+
   // STUDENT
   studentIdentifier  String?
   fullName           String?
@@ -66,6 +70,8 @@ model User {
   firstContactPhone  String?
   secondContactPhone String?
   academicTerm       EAcademicTerm?
+  countryName        String?
+  countryCode        String?
 
   academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
   academicYearId String?       @db.ObjectId
@@ -74,34 +80,38 @@ model User {
   streamId String? @db.ObjectId
 
   schoolId String? @db.ObjectId
-  school   User?   @relation("SchoolStudents", fields: [schoolId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  school   School? @relation(fields: [schoolId], references: [id])
 
   parentId String? @db.ObjectId
   parent   User?   @relation("ParentChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   studentPromotions StudentPromotion[]
+  studentExtraFees  StudentExtraFee[]
+  paymentsMade      Transaction[]
 
-  studentExtraFees StudentExtraFee[]
+  // PARENT
+  phone    String? @unique
+  children User[]  @relation("ParentChildren")
+}
 
-  // SCHOOL
+model School {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now())
+  deletedAt     DateTime?
   schoolName    String?
   schoolTitle   String?
   schoolLogo    String?
   schoolType    ESchoolType?
   hasStudentIds Boolean?     @default(false)
-  username      String?
-  password      String?
   countryName   String?
   countryCode   String?
+  address       String?
 
-  students     User[]        @relation("SchoolStudents")
-  feesReceived Transaction[] @relation("PayeeTransactions")
-  classrooms   Classroom[]   @relation("SchoolClassrooms")
-
-  // PARENT
-  phone    String?       @unique
-  children User[]        @relation("ParentChildren")
-  feesPaid Transaction[] @relation("PayerTransactions")
+  fees             Fee[]
+  students         User[]
+  paymentsReceived Transaction[]
+  classrooms       Classroom[]
 }
 
 model Transaction {
@@ -111,10 +121,10 @@ model Transaction {
   deletedAt     DateTime?
   referenceCode String
   paymentMethod EPaymentMethod
-  payerId       String?        @db.ObjectId
-  payer         User?          @relation("PayerTransactions", fields: [payerId], references: [id])
-  payee         User?          @relation("PayeeTransactions", fields: [payeeId], references: [id])
-  payeeId       String?        @db.ObjectId
+  student       User?          @relation(fields: [studentId], references: [id])
+  studentId     String?        @db.ObjectId
+  school        School?        @relation(fields: [schoolId], references: [id])
+  schoolId      String?        @db.ObjectId
   date          DateTime
   phoneNumber   String?
   amount        Float?
@@ -139,10 +149,11 @@ model Classroom {
   updatedAt DateTime  @default(now())
   deletedAt DateTime?
   name      String?
-  school    User?     @relation("SchoolClassrooms", fields: [schoolId], references: [id])
+  school    School?   @relation(fields: [schoolId], references: [id])
   schoolId  String?   @db.ObjectId
   streams   Stream[]
-  fees      Fee[]
+  fees      Fee[]     @relation(fields: [feeIDs], references: [id])
+  feeIDs    String[]  @db.ObjectId
 }
 
 model Stream {
@@ -164,8 +175,8 @@ model Fee {
   updatedAt        DateTime          @default(now())
   deletedAt        DateTime?
   name             String?
-  classroom        Classroom?        @relation(fields: [classroomId], references: [id])
-  classroomId      String?           @db.ObjectId
+  classrooms       Classroom[]       @relation(fields: [classroomIDs], references: [id])
+  classroomIDs     String[]          @db.ObjectId
   academicYear     AcademicYear?     @relation(fields: [academicYearId], references: [id])
   academicYearId   String?           @db.ObjectId
   academicTerms    EAcademicTerm[]
@@ -173,6 +184,8 @@ model Fee {
   type             EFeeType?
   amount           Float?
   studentExtraFees StudentExtraFee[]
+  schoolId         String?           @db.ObjectId
+  school           School?           @relation(fields: [schoolId], references: [id])
 }
 
 model StudentPromotion {

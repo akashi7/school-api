@@ -40,7 +40,7 @@ export class FeeController {
     @Query() findDto: FindFeesDto,
     @GetUser() user: User,
   ) {
-    const payload = await this.feeService.findAll(user, paginationDto, findDto);
+    const payload = await this.feeService.findAll(paginationDto, findDto, user);
     return new GenericResponse("Fees retrieved", payload);
   }
 
