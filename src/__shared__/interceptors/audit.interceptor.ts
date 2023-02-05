@@ -27,7 +27,7 @@ export class AuditInterceptor implements NestInterceptor {
       tap(() => {
         const duration = Date.now() - now;
         Logger.log(
-          `${statusCode} ${method} ${url} by ${
+          `[REQUEST] ${statusCode} ${method} ${url} by ${
             request?.user?.fullName || request?.user?.schoolName || "anonymous"
           } ${duration}ms`,
           context.getClass().name,

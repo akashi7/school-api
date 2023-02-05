@@ -169,7 +169,7 @@ export class StudentService {
         },
       })) + 1;
     const month = getMonth(now);
-    return `${now.getFullYear}${month > 9 ? month : `0${month}`}${id}`;
+    return `${now.getFullYear()}${month > 9 ? month : `0${month}`}${id}`;
   }
 
   async update(id: string, dto: UpdateStudentDto, school: User) {
