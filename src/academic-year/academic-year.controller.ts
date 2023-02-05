@@ -23,13 +23,14 @@ import { CreateAcademicYearDto } from "./dto/create-academic-year.dto";
 import { UpdateAcademicYearDto } from "./dto/update-academic-year.dto";
 
 @Controller("academic-years")
-@Auth(ERole.ADMIN)
+@Auth()
 @ApiTags("Academic years")
 export class AcademicYearController {
   constructor(private readonly academicYearService: AcademicYearService) {}
 
   @Post()
   @CreatedResponse()
+  @Auth(ERole.ADMIN)
   async create(@Body() createAcademicYearDto: CreateAcademicYearDto) {
     const payload = await this.academicYearService.create(
       createAcademicYearDto,
@@ -47,6 +48,7 @@ export class AcademicYearController {
 
   @Patch(":id")
   @OkResponse()
+  @Auth(ERole.ADMIN)
   async update(
     @Param("id") id: string,
     @Body() updateAcademicYearDto: UpdateAcademicYearDto,
@@ -59,6 +61,7 @@ export class AcademicYearController {
   }
 
   @Patch(":id/set-current")
+  @Auth(ERole.ADMIN)
   @OkResponse()
   async setCurrentAcademicYear(@Param("id") id: string) {
     const payload = await this.academicYearService.setCurrent(id);
@@ -66,6 +69,7 @@ export class AcademicYearController {
   }
 
   @Delete(":id")
+  @Auth(ERole.ADMIN)
   @OkResponse()
   async remove(@Param("id") id: string) {
     const payload = await this.academicYearService.remove(id);

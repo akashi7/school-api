@@ -78,6 +78,7 @@ export class FeeService {
           classroom: { select: { id: true, name: true } },
           academicYear: { select: { id: true, name: true } },
         },
+        orderBy: { createdAt: "desc" },
       },
       +page,
       +size,
