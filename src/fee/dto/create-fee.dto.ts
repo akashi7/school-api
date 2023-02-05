@@ -20,6 +20,7 @@ export class CreateFeeDto {
   @ApiProperty({ enum: EAcademicTerm, isArray: true })
   @IsEnum(EAcademicTerm, { each: true })
   academicTerms: EAcademicTerm[];
+  @ApiProperty({ enum: EFeeType })
   @IsEnum(EFeeType)
   type: EFeeType;
   @IsBoolean()
