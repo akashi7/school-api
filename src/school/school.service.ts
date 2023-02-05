@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { ERole } from "@prisma/client";
+import { ERole, User } from "@prisma/client";
 import { PasswordEncryption } from "../auth/utils/password-encrytion.util";
 import { PrismaService } from "../prisma.service";
 import { CreateSchoolDto } from "./dto/create-school.dto";
@@ -59,6 +59,7 @@ export class SchoolService {
     if (!school) throw new NotFoundException("School not found");
     return school;
   }
+
   async delete(id: string) {
     const school = await this.findOne(id);
     await this.prismaService.school.delete({ where: { id: school.id } });

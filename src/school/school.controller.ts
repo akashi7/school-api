@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { ERole } from "@prisma/client";
+import { ERole, User } from "@prisma/client";
 import { Auth } from "../auth/decorators/auth.decorator";
+import { GetUser } from "../auth/decorators/get-user.decorator";
 import { AllowRoles } from "../auth/decorators/roles.decorator";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { CreateSchoolDto } from "./dto/create-school.dto";
@@ -23,6 +24,13 @@ export class SchoolController {
   async findAll() {
     const payload = await this.schoolService.findAll();
     return new GenericResponse("Schools retrieved", payload);
+  }
+
+  @Get("current")
+  @Auth(ERole.SCHOOL)
+  async findCurrentSchool(@GetUser() user: User) {
+    const payload = await this.schoolService.findOne(user.schoolId);
+    return new GenericResponse("Current school retrieved", payload);
   }
 
   @Get(":id")
