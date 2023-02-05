@@ -14,6 +14,13 @@ import { UpdateFeeDto } from "./dto/update-fee.dto";
 @Injectable()
 export class FeeService {
   constructor(private readonly prismaService: PrismaService) {}
+
+  /**
+   * Create a fee
+   * @param dto create object
+   * @param user logged in user
+   * @returns fee
+   */
   async create(dto: CreateFeeDto, user: User) {
     return await this.prismaService.$transaction(async (tx) => {
       if (
@@ -45,6 +52,13 @@ export class FeeService {
     });
   }
 
+  /**
+   * Find all fees
+   * @param param0 pagination options
+   * @param findDto find options
+   * @param user logged in user
+   * @returns fees
+   */
   async findAll(
     { page, size }: PaginationDto,
     findDto: FindFeesDto,
@@ -90,6 +104,13 @@ export class FeeService {
   }
 
   // TODO Review this logic to get accurate results for optional fees
+  /**
+   * Find all fees by a student
+   * @param id student id
+   * @param dto find options
+   * @param user logged in user
+   * @returns fees
+   */
   async findFeesByStudent(id: string, dto: FindFeesByStudentDto, user: User) {
     const studentPromotion =
       await this.prismaService.studentPromotion.findFirst({
@@ -122,6 +143,12 @@ export class FeeService {
     };
   }
 
+  /**
+   * Find one fee
+   * @param id fee id
+   * @param user logged in user
+   * @returns fee
+   */
   async findOne(id: string, user: User) {
     const fee = await this.prismaService.fee.findFirst({
       where: { schoolId: user.schoolId, id },
@@ -130,6 +157,13 @@ export class FeeService {
     return fee;
   }
 
+  /**
+   * Update a fee
+   * @param id fee id
+   * @param dto update object
+   * @param user logged in user
+   * @returns fee
+   */
   async update(id: string, dto: UpdateFeeDto, user: User) {
     await this.findOne(id, user);
     delete dto.classroomIDs;
@@ -162,6 +196,12 @@ export class FeeService {
     return await this.prismaService.fee.findFirst({ where: { id } });
   }
 
+  /**
+   * Delete a fee
+   * @param id fee id
+   * @param user logged in user
+   * @returns fee id
+   */
   async remove(id: string, user: User) {
     await this.findOne(id, user);
     await this.prismaService.fee.delete({ where: { id } });

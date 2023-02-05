@@ -11,18 +11,27 @@ import { CreateParentDto } from "./dto/create-parent.dto";
 export class ParentService {
   constructor(private readonly prismaService: PrismaService) {}
 
+  /**
+   * Create a parent
+   * @param dto create dto
+   * @returns user
+   */
   async create(dto: CreateParentDto) {
     if (await this.prismaService.user.count({ where: { phone: dto.phone } }))
       throw new BadRequestException("Phone number already exists");
     const payload = await this.prismaService.user.create({
       data: {
         role: ERole.PARENT,
-        phone: dto.phone,
+        ...dto,
       },
     });
     return payload;
   }
 
+  /**
+   * Find all parents
+   * @returns users
+   */
   async findAll() {
     const payload = await this.prismaService.user.findMany({
       where: {
@@ -47,6 +56,11 @@ export class ParentService {
     return payload;
   }
 
+  /**
+   * Find a parent
+   * @param id parent id
+   * @returns user
+   */
   async findOne(id: string) {
     const user = await this.prismaService.user.findFirst({
       where: {

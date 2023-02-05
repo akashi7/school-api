@@ -23,7 +23,12 @@ export class JwtRefreshStrategy extends PassportStrategy(
       ignoreExpiration: true,
     });
   }
-
+  /**
+   * Validate refresh token
+   * @param req Request
+   * @param payload Jwt payload
+   * @returns user
+   */
   async validate(req: Request, payload: JwtPayload): Promise<User> {
     const { id } = payload;
     const user = await new PrismaClient().user.findFirst({

@@ -8,8 +8,8 @@ import { configure } from "./__shared__/config/app.config";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const prismaService = app.get(PrismaService);
-  await prismaService.enableShutdownHooks(app);
-  prismaService.applyPrismaMiddleware();
+  await prismaService.enableShutdownHooks(app); // Enable prisma shutdown hooks to close db properly
+  prismaService.applyPrismaMiddleware(); // Apply prisma middleware for delete and find methods,...
 
   configure(app);
 

@@ -63,9 +63,9 @@ export class ClassroomController {
     @GetUser() user: User,
   ) {
     const payload = await this.classroomService.findAll(
-      user,
       paginationDto,
       findDto,
+      user,
     );
     return new GenericResponse("Classrooms retrieved", payload);
   }
@@ -96,10 +96,10 @@ export class ClassroomController {
     @GetUser() user: User,
   ) {
     const payload = await this.classroomService.findClassroomStreams(
-      user,
       classroomId,
       paginationDto,
       findDto,
+      user,
     );
     return new GenericResponse("Streams retrieved", payload);
   }

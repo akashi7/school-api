@@ -18,7 +18,11 @@ export class AuthService {
     private readonly passwordEncryption: PasswordEncryption,
     private readonly prismaService: PrismaService,
   ) {}
-
+  /**
+   * Login the admin
+   * @param dto login dto
+   * @returns tokens
+   */
   async adminLogin(dto: AdminLoginDto) {
     const { email, password } = dto;
     const user = await this.prismaService.user.findFirst({
@@ -52,6 +56,11 @@ export class AuthService {
     };
   }
 
+  /**
+   * Login the parent
+   * @param dto login dto
+   * @returns tokens
+   */
   async parentLogin(
     dto: ParentLoginDto,
   ): Promise<{ accessToken: any; refreshToken: any }> {
@@ -77,6 +86,12 @@ export class AuthService {
       refreshToken,
     };
   }
+
+  /**
+   * Login the school admin
+   * @param dto login dto
+   * @returns tokens
+   */
   async schoolLogin(
     dto: SchoolLoginDto,
   ): Promise<{ accessToken: any; refreshToken: any }> {
@@ -110,6 +125,12 @@ export class AuthService {
       refreshToken,
     };
   }
+
+  /**
+   * Login the student
+   * @param dto login dto
+   * @returns tokens
+   */
   async studentLogin(
     dto: StudentLoginDto,
   ): Promise<{ accessToken: any; refreshToken: any }> {
@@ -137,15 +158,26 @@ export class AuthService {
     };
   }
 
+  /**
+   * Get user profile
+   * @param user logged in user
+   * @returns user profile
+   */
   async getProfile(user: User): Promise<Partial<User>> {
     const profile = await this.prismaService.user.findFirst({
       where: {
         id: user.id,
       },
     });
+    delete profile.password;
     return profile;
   }
 
+  /**
+   * Refresh token
+   * @param param0 user
+   * @returns tokens
+   */
   async refreshToken({
     id,
     role,
@@ -160,6 +192,11 @@ export class AuthService {
     };
   }
 
+  /**
+   * Log out
+   * @param param0 user
+   * @returns
+   */
   async logout({ id }: User): Promise<{ accessToken: string }> {
     await this.prismaService.user.update({
       where: { id },
@@ -168,6 +205,11 @@ export class AuthService {
     return;
   }
 
+  /**
+   * Generate access and refresh tokens
+   * @param param0 Jwt payload
+   * @returns tokens
+   */
   private async generateTokens({ id, role }: JwtPayload) {
     const accessToken = await this.jwtService.signAsync({
       id,

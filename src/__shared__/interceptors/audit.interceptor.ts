@@ -12,7 +12,7 @@ import { tap } from "rxjs/operators";
  * Class representing a Request interceptor
  * for API requests to provide logging of users access types
  * a payload object
- * @author Awesomity Lab
+ * @author Brian Gitego
  * @version 1.0
  */
 @Injectable()
@@ -28,8 +28,8 @@ export class AuditInterceptor implements NestInterceptor {
         const duration = Date.now() - now;
         Logger.log(
           `[REQUEST] ${statusCode} ${method} ${url} by ${
-            request?.user?.fullName || request?.user?.schoolName || "anonymous"
-          } ${duration}ms`,
+            request.user?.role || ""
+          } ${request?.user?.fullName || "anonymous"} ${duration}ms`,
           context.getClass().name,
         );
       }),

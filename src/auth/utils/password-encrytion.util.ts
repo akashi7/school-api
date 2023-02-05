@@ -1,14 +1,24 @@
 import * as bcrypt from "bcryptjs";
 
 export class PasswordEncryption {
-  hashPassword(pass: any) {
+  /**
+   * Hash password
+   * @param password Password to hash
+   * @returns password hash
+   */
+  hashPassword(password: any) {
     const salt = bcrypt.genSaltSync();
-    const hashedPassword = bcrypt.hashSync(pass, salt);
+    const hashedPassword = bcrypt.hashSync(password, salt);
     return hashedPassword;
   }
-
-  comparePassword(pass: string, hash: string) {
-    const result = bcrypt.compareSync(pass, hash);
+  /**
+   * Compare password with hash
+   * @param password Password to compare
+   * @param hash Password hash
+   * @returns boolean result
+   */
+  comparePassword(password: string, hash: string) {
+    const result = bcrypt.compareSync(password, hash);
     return result;
   }
 }
