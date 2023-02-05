@@ -6,7 +6,6 @@ export const schoolFields = {
   schoolLogo: true,
   schoolType: true,
   hasStudentIds: true,
-  username: true,
   countryName: true,
   countryCode: true,
 };
