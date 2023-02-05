@@ -110,6 +110,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
             username: "nestschool",
             password: bcrypt.hashSync(process.env.ADMIN_PASSWORD, 10),
             schoolId: school.id,
+            fullName: "Nest School",
           },
         });
       });
@@ -195,7 +196,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   }
 
   /**
-   * Apply middleware to prisma
+   * Apply middleware to prisma for delete, find,...
    * @param prismaService [PrismaService]
    */
   applyPrismaMiddleware() {

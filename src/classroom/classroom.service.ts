@@ -16,6 +16,13 @@ import { UpdateStreamDto } from "./dto/update-stream.dto";
 @Injectable()
 export class ClassroomService {
   constructor(private readonly prismaService: PrismaService) {}
+
+  /**
+   * Create a classroom
+   * @param dto Request body
+   * @param user logged in user
+   * @returns classroom
+   */
   async create(dto: CreateClassroomDto, user: User) {
     if (
       await this.prismaService.classroom.count({
@@ -35,10 +42,17 @@ export class ClassroomService {
     return newClassroom;
   }
 
+  /**
+   * Find all classrooms
+   * @param param0 Pagination object
+   * @param findDto find options
+   * @param user logged in user
+   * @returns classrooms
+   */
   async findAll(
-    user: User,
     { page, size }: PaginationDto,
     findDto: FindClassroomsDto,
+    user: User,
   ) {
     const whereConditions: Prisma.ClassroomWhereInput = {};
     if (findDto.schoolId) whereConditions.schoolId = findDto.schoolId; // Override finding by current logged in school if the id is provided
@@ -53,6 +67,12 @@ export class ClassroomService {
     return result;
   }
 
+  /**
+   * Find one classroom
+   * @param id classroom id
+   * @param user logged in user
+   * @returns classroom
+   */
   async findOne(id: string, user?: User) {
     const classroom = await this.prismaService.classroom.findFirst({
       where: user ? { schoolId: user.schoolId, id } : { id },
@@ -61,6 +81,13 @@ export class ClassroomService {
     return classroom;
   }
 
+  /**
+   * Update a classroom
+   * @param id classroom id
+   * @param dto update object
+   * @param user logged in user
+   * @returns classroom
+   */
   async update(id: string, dto: UpdateClassroomDto, user: User) {
     const classroom = await this.findOne(id, user);
     await this.prismaService.classroom.update({
@@ -72,17 +99,31 @@ export class ClassroomService {
     return await this.findOne(id);
   }
 
-  async remove(id: string, school: User) {
-    const classroom = await this.findOne(id, school);
+  /**
+   * Delete a classroom
+   * @param id classroom id
+   * @param user logged in user
+   * @returns classroom id
+   */
+  async remove(id: string, user: User) {
+    const classroom = await this.findOne(id, user);
     await this.prismaService.classroom.delete({ where: { id: classroom.id } });
     return id;
   }
 
+  /**
+   * Find a classroom's streams
+   * @param classroomId classroom id
+   * @param param1 pagination options
+   * @param findDto find options
+   * @param user logged in user
+   * @returns streams
+   */
   async findClassroomStreams(
-    user: User,
     classroomId: string,
     { page, size }: PaginationDto,
     findDto: FindClassroomsDto,
+    user: User,
   ) {
     const whereConditions: Prisma.StreamWhereInput = { classroomId };
     if (findDto.schoolId)
@@ -136,26 +177,51 @@ export class ClassroomService {
     return result;
   }
 
-  async findOneStream(id: string, classroomId?: string, user?: User) {
+  /**
+   * Find one stream
+   * @param streamId stream id
+   * @param classroomId classroom id
+   * @param user logged in user
+   * @returns stream
+   */
+  async findOneStream(streamId: string, classroomId?: string, user?: User) {
     const stream = await this.prismaService.stream.findFirst({
       where: user
         ? classroomId
-          ? { classroom: { schoolId: user.schoolId }, id, classroomId }
-          : { classroom: { schoolId: user.schoolId }, id }
+          ? {
+              classroom: { schoolId: user.schoolId },
+              id: streamId,
+              classroomId,
+            }
+          : { classroom: { schoolId: user.schoolId }, id: streamId }
         : classroomId
-        ? { id, classroomId }
-        : { id },
+        ? { id: streamId, classroomId }
+        : { id: streamId },
     });
     if (!stream) throw new NotFoundException("Stream not found");
     return stream;
   }
 
-  async removeStream(id: string, classroomId: string, user: User) {
-    const stream = await this.findOneStream(id, classroomId, user);
+  /**
+   * Delete a stream
+   * @param streamId stream id
+   * @param classroomId classroom id
+   * @param user logged in user
+   * @returns stream id
+   */
+  async removeStream(streamId: string, classroomId: string, user: User) {
+    const stream = await this.findOneStream(streamId, classroomId, user);
     await this.prismaService.stream.delete({ where: { id: stream.id } });
-    return id;
+    return streamId;
   }
 
+  /**
+   * Create a stream
+   * @param dto create object
+   * @param classroomId classroom id
+   * @param user logged in user
+   * @returns stream
+   */
   async createStream(dto: CreateStreamDto, classroomId: string, user: User) {
     const classroom = await this.findOne(classroomId, user);
     const newStream = await this.prismaService.stream.create({
@@ -167,6 +233,14 @@ export class ClassroomService {
     return newStream;
   }
 
+  /**
+   * Update a stream
+   * @param id stream id
+   * @param classroomId classroom id
+   * @param dto update object
+   * @param user logged in user
+   * @returns stream
+   */
   async updateStream(
     id: string,
     classroomId: string,

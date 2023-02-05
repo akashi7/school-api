@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { ERole, User } from "@prisma/client";
+import { ERole } from "@prisma/client";
 import { PasswordEncryption } from "../auth/utils/password-encrytion.util";
 import { PrismaService } from "../prisma.service";
 import { CreateSchoolDto } from "./dto/create-school.dto";
@@ -16,6 +16,11 @@ export class SchoolService {
     private readonly passwordEncryption: PasswordEncryption,
   ) {}
 
+  /**
+   * Create a school
+   * @param dto create object
+   * @returns school
+   */
   async create(dto: CreateSchoolDto) {
     if (
       await this.prismaService.user.count({ where: { username: dto.username } })
@@ -40,6 +45,10 @@ export class SchoolService {
     });
   }
 
+  /**
+   * Find all schools
+   * @returns schools
+   */
   async findAll() {
     const payload = await this.prismaService.school.findMany({
       select: {
@@ -49,6 +58,11 @@ export class SchoolService {
     return payload;
   }
 
+  /**
+   * Find a school
+   * @param id school id
+   * @returns school
+   */
   async findOne(id: string) {
     const school = await this.prismaService.school.findFirst({
       where: {
@@ -60,6 +74,11 @@ export class SchoolService {
     return school;
   }
 
+  /**
+   * Delete a school
+   * @param id school id
+   * @returns school id
+   */
   async delete(id: string) {
     const school = await this.findOne(id);
     await this.prismaService.school.delete({ where: { id: school.id } });

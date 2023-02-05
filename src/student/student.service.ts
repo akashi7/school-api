@@ -92,6 +92,12 @@ export class StudentService {
     return result;
   }
 
+  /**
+   * Create a student
+   * @param dto create object
+   * @param user logged in user
+   * @returns user (student)
+   */
   async create(dto: CreateStudentDto, user: User) {
     return await this.prismaService.$transaction(async (tx) => {
       let parent = await tx.user.findFirst({
@@ -99,7 +105,11 @@ export class StudentService {
       });
       if (!parent) {
         parent = await tx.user.create({
-          data: { phone: dto.parentPhoneNumber, role: ERole.PARENT },
+          data: {
+            phone: dto.parentPhoneNumber,
+            role: ERole.PARENT,
+            fullName: `${dto.fullName}'s Parent`,
+          },
         });
       }
       await this.classroomService.findOneStream(dto.streamId, null, user);
@@ -141,6 +151,12 @@ export class StudentService {
     });
   }
 
+  /**
+   * Find one student
+   * @param id student id
+   * @param user logged in user
+   * @returns user (student)
+   */
   async findOne(id: string, user?: User) {
     const student = await this.prismaService.user.findFirst({
       where: user
@@ -159,6 +175,10 @@ export class StudentService {
     return student;
   }
 
+  /**
+   * Generate a student identifier (eg:2023013)
+   * @returns student identifier
+   */
   async generateStudentId() {
     const now = new Date();
     const id =
@@ -172,8 +192,15 @@ export class StudentService {
     return `${now.getFullYear()}${month > 9 ? month : `0${month}`}${id}`;
   }
 
-  async update(id: string, dto: UpdateStudentDto, school: User) {
-    await this.findOne(id, school);
+  /**
+   * Update a student
+   * @param id student id
+   * @param dto update object
+   * @param user logged in user
+   * @returns user (student)
+   */
+  async update(id: string, dto: UpdateStudentDto, user: User) {
+    await this.findOne(id, user);
     if (dto.email) {
       const existingEmailStudent = await this.prismaService.user.findFirst({
         where: { id: { not: id }, email: dto.email },
@@ -190,11 +217,25 @@ export class StudentService {
     return await this.findOne(id);
   }
 
+  /**
+   * Delete a student
+   * @param id student id
+   * @param user logged in user
+   * @returns student id
+   */
   async remove(id: string, user: User) {
     await this.findOne(id, user);
     await this.prismaService.user.delete({ where: { id } });
     return id;
   }
+
+  /**
+   * Create a student promotion
+   * @param studentId student id
+   * @param dto create object
+   * @param user logged in user
+   * @returns StudentPromotion
+   */
   async createPromotion(
     studentId: string,
     dto: CreatePromotionDto,
@@ -224,6 +265,14 @@ export class StudentService {
     });
   }
 
+  /**
+   * Update student promotion
+   * @param studentId
+   * @param studentPromotionId
+   * @param dto update object
+   * @param user logged in user
+   * @returns StudentPromotion
+   */
   async updatePromotion(
     studentId: string,
     studentPromotionId: string,
@@ -260,6 +309,13 @@ export class StudentService {
     });
   }
 
+  /**
+   * Delete a student promotion
+   * @param studentId
+   * @param studentPromotionId
+   * @param user logged in user
+   * @returns student promotion id
+   */
   async deletePromotion(
     studentId: string,
     studentPromotionId: string,
@@ -282,7 +338,7 @@ export class StudentService {
    * Create extra fee
    * @param studentId
    * @param dto
-   * @param user
+   * @param user logged in user
    * @returns StudentExtraFee
    */
   async createExtraFee(studentId: string, dto: CreateExtraFeeDto, user: User) {
@@ -299,11 +355,11 @@ export class StudentService {
    * Delete Student Extra Fee
    * @param studentId
    * @param extraFeeId
-   * @param school
+   * @param user
    * @returns StudentExtraFee
    */
-  async deleteExtraFee(studentId: string, extraFeeId: string, school: User) {
-    await this.findOne(studentId, school);
+  async deleteExtraFee(studentId: string, extraFeeId: string, user: User) {
+    await this.findOne(studentId, user);
     const extraFee = await this.prismaService.studentExtraFee.findFirst({
       where: { id: extraFeeId, studentId: studentId },
     });
