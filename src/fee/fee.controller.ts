@@ -7,15 +7,21 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
+import { Response } from "express";
 import { Auth } from "../auth/decorators/auth.decorator";
 import { GetUser } from "../auth/decorators/get-user.decorator";
 import { CreatedResponse, PageResponse } from "../__shared__/decorators";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
 import { CreateFeeDto } from "./dto/create-fee.dto";
+import {
+  DownloadFeesByClassroomsDto,
+  DownloadFeesByStudentsDto,
+} from "./dto/download-fees.dto";
 import { FindFeesDto } from "./dto/find-fees.dto";
 import { UpdateFeeDto } from "./dto/update-fee.dto";
 import { FeeService } from "./fee.service";
@@ -42,6 +48,41 @@ export class FeeController {
   ) {
     const payload = await this.feeService.findAll(paginationDto, findDto, user);
     return new GenericResponse("Fees retrieved", payload);
+  }
+
+  @Get("classrooms/download")
+  async downloadFeesByClassrooms(
+    @Query() dto: DownloadFeesByClassroomsDto,
+    @GetUser() user: User,
+    @Res() res: Response,
+  ) {
+    const { workbook, filename } =
+      await this.feeService.downloadFeesByClassrooms(dto, user);
+    res.set({
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      // "Content-Length": buffer.length,
+      "Content-Disposition": `attachment; filename=${filename}.xlsx`,
+    });
+    workbook.xlsx.write(res).then(() => res.end());
+  }
+
+  @Get("students/download")
+  async downloadFeesByStudents(
+    @Query() dto: DownloadFeesByStudentsDto,
+    @GetUser() user: User,
+    @Res() res: Response,
+  ) {
+    const { workbook, filename } = await this.feeService.downloadFeesByStudents(
+      dto,
+      user,
+    );
+    res.set({
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename=${filename}.xlsx`,
+    });
+    workbook.xlsx.write(res).then(() => res.end());
   }
 
   @Patch(":id")

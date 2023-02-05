@@ -50,7 +50,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     Logger.debug(`Seeding finished.`);
   }
 
-  // SEED THE ADMIN
+  /**
+   * Seed the admin
+   */
   private async seedAdmin() {
     if (!(await this.user.count({ where: { role: ERole.ADMIN } }))) {
       await this.user.create({
@@ -65,7 +67,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  // SEED PARENT
+  /**
+   * Seed a parent
+   */
   private async seedParent() {
     let parent = await this.user.findFirst({
       where: { role: ERole.PARENT, phone: "+250788000001" },
@@ -82,7 +86,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     this.parentId = parent.id;
   }
 
-  // SEED SCHOOL
+  /**
+   * Seed school
+   */
   private async seedSchool() {
     if (
       !(await this.user.count({
@@ -117,40 +123,51 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     }
   }
 
+  /**
+   * Seed a student
+   */
   private async seedStudent() {
     const academicYear = await this.seedAcademicYear();
     const classroom = await this.seedClassroom();
     const stream = await this.seedStream(classroom);
-
-    // SEED STUDENT
-    if (
-      !(await this.user.count({
-        where: { role: ERole.STUDENT, email: "gitego@gmail.com" },
-      }))
-    ) {
-      await this.user.create({
-        data: {
-          role: ERole.STUDENT,
-          studentIdentifier: "20220101",
-          fullName: "Brian Gitego",
-          address: "Kicukiro, Kigali",
-          email: "gitego@gmail.com",
-          passportPhoto:
-            "https://st.depositphotos.com/2101611/4338/v/600/depositphotos_43381243-stock-illustration-male-avatar-profile-picture.jpg",
-          dob: new Date("01-01-1998"),
-          gender: EGender.MALE,
-          firstContactPhone: "+250788000002",
-          secondContactPhone: "+250788000003",
-          academicTerm: EAcademicTerm.TERM1,
-          academicYearId: academicYear.id,
-          streamId: stream.id,
-          parentId: this.parentId,
-          countryName: "Rwanda",
-          countryCode: "RW",
-          schoolId: this.schoolId,
-        },
-      });
-    }
+    await this.$transaction(async (tx) => {
+      // SEED STUDENT
+      if (
+        !(await tx.user.count({
+          where: { role: ERole.STUDENT, email: "gitego@gmail.com" },
+        }))
+      ) {
+        const student = await tx.user.create({
+          data: {
+            role: ERole.STUDENT,
+            studentIdentifier: "20220101",
+            fullName: "Brian Gitego",
+            address: "Kicukiro, Kigali",
+            email: "gitego@gmail.com",
+            passportPhoto:
+              "https://st.depositphotos.com/2101611/4338/v/600/depositphotos_43381243-stock-illustration-male-avatar-profile-picture.jpg",
+            dob: new Date("01-01-1998"),
+            gender: EGender.MALE,
+            firstContactPhone: "+250788000002",
+            secondContactPhone: "+250788000003",
+            academicTerm: EAcademicTerm.TERM1,
+            academicYearId: academicYear.id,
+            streamId: stream.id,
+            parentId: this.parentId,
+            countryName: "Rwanda",
+            countryCode: "RW",
+            schoolId: this.schoolId,
+          },
+        });
+        await tx.studentPromotion.create({
+          data: {
+            studentId: student.id,
+            streamId: student.streamId,
+            academicYearId: student.academicYearId,
+          },
+        });
+      }
+    });
   }
 
   private async seedAcademicYear() {

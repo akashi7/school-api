@@ -3,11 +3,16 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { EFeeType, Fee, Prisma, User } from "@prisma/client";
+import { EAcademicTerm, EFeeType, Fee, Prisma, User } from "@prisma/client";
+import { Workbook } from "exceljs";
 import { PrismaService } from "../prisma.service";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
 import { paginate } from "../__shared__/utils/pagination.util";
 import { CreateFeeDto } from "./dto/create-fee.dto";
+import {
+  DownloadFeesByClassroomsDto,
+  DownloadFeesByStudentsDto,
+} from "./dto/download-fees.dto";
 import { FindFeesByStudentDto, FindFeesDto } from "./dto/find-fees.dto";
 import { UpdateFeeDto } from "./dto/update-fee.dto";
 
@@ -46,6 +51,7 @@ export class FeeService {
           optional: dto.optional,
           amount: dto.amount,
           classroomIDs: dto.classroomIDs,
+          schoolId: user.schoolId,
         },
       });
       return newFee;
@@ -64,6 +70,30 @@ export class FeeService {
     findDto: FindFeesDto,
     user: User,
   ) {
+    const whereConditions = this.getFeesWhereConditions(findDto, user);
+    const payload = await paginate<Fee, Prisma.FeeFindManyArgs>(
+      this.prismaService.fee,
+      {
+        where: { ...whereConditions },
+        include: {
+          classrooms: { select: { id: true, name: true } },
+          academicYear: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      },
+      +page,
+      +size,
+    );
+    return payload;
+  }
+
+  /**
+   * Build where conditions for find fees
+   * @param findDto find options
+   * @param user logged in user
+   * @returns where condition object
+   */
+  private getFeesWhereConditions(findDto: FindFeesDto, user: User) {
     const whereConditions: Prisma.FeeWhereInput = {
       schoolId: user.schoolId,
     };
@@ -87,20 +117,7 @@ export class FeeService {
     if (findDto.classroomId)
       whereConditions.classroomIDs = { has: findDto.classroomId };
     if (findDto.term) whereConditions.academicTerms = { has: findDto.term };
-    const payload = await paginate<Fee, Prisma.FeeFindManyArgs>(
-      this.prismaService.fee,
-      {
-        where: { ...whereConditions },
-        include: {
-          classrooms: { select: { id: true, name: true } },
-          academicYear: { select: { id: true, name: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      },
-      +page,
-      +size,
-    );
-    return payload;
+    return whereConditions;
   }
 
   // TODO Review this logic to get accurate results for optional fees
@@ -206,5 +223,133 @@ export class FeeService {
     await this.findOne(id, user);
     await this.prismaService.fee.delete({ where: { id } });
     return id;
+  }
+  /**
+   * Download fees report by classrooms
+   * @param scope the scope of the report
+   * @param user logged in user
+   */
+  async downloadFeesByClassrooms(dto: DownloadFeesByClassroomsDto, user: User) {
+    const workbook = new Workbook();
+    const worksheet = workbook.addWorksheet("Fees Report");
+    worksheet.columns = [
+      { header: "No", key: "no" },
+      { header: "CLASS", key: "class" },
+      { header: "FEES/STUDENT", key: "feesPerStudent" },
+      { header: "PAID AMOUNT", key: "paidAmount" },
+      { header: "REMAINING BALANCE", key: "remainingBalance" },
+    ];
+    const streams = await this.prismaService.stream.findMany({
+      where: {
+        classroom: { schoolId: user.schoolId },
+      },
+      include: { classroom: { select: { name: true } } },
+    });
+    const academicYear = await this.prismaService.academicYear.findFirst({
+      where: { id: dto.academicYearId },
+    });
+    if (!academicYear) throw new NotFoundException("Academic year not found");
+    // Add the data rows
+    for (const [i, stream] of streams.entries()) {
+      const feesPerStudent = (
+        await this.prismaService.fee.findMany({
+          where: {
+            classroomIDs: { has: stream.classroomId },
+            academicYearId: dto.academicYearId,
+            academicTerms: { has: dto.term },
+            optional: false,
+          },
+        })
+      ).reduce((a, fee) => a + fee.amount, 0);
+      worksheet.addRow({
+        no: i + 1,
+        class: `${stream.classroom.name} ${stream.name}`,
+        feesPerStudent,
+        paidAmount: 0, // TODO: REVISIT THIS AFTER WORKING ON PAYMENTS
+        remainingBalance: 0, // TODO: REVISIT THIS AFTER WORKING ON PAYMENTS
+      });
+    }
+    return {
+      workbook,
+      filename: `FEES_CLEARANCE_REPORT_${dto.term}_${academicYear.name}`,
+    };
+  }
+
+  /**
+   * Download fees report by classrooms
+   * @param scope the scope of the report
+   * @param user logged in user
+   */
+  async downloadFeesByStudents(dto: DownloadFeesByStudentsDto, user: User) {
+    const workbook = new Workbook();
+    const worksheet = workbook.addWorksheet("Fees Report");
+    worksheet.columns = [
+      { header: "No", key: "no" },
+      { header: "NAME", key: "name" },
+      { header: "1st TERM", key: "term1" },
+      { header: "1st TERM BAL", key: "term1Bal" },
+      { header: "2nd TERM", key: "term2" },
+      { header: "2nd TERM BAL", key: "term2Bal" },
+      { header: "3rd TERM", key: "term3" },
+      { header: "3rd TERM BAL", key: "term3Bal" },
+    ];
+
+    const academicYear = await this.prismaService.academicYear.findFirst({
+      where: { id: dto.academicYearId },
+    });
+    if (!academicYear) throw new NotFoundException("Academic year not found");
+    const stream = await this.prismaService.stream.findFirst({
+      where: { id: dto.streamId },
+      include: { classroom: { select: { name: true } } },
+    });
+    if (!stream) throw new NotFoundException("Stream not found");
+    const studentPromotions =
+      await this.prismaService.studentPromotion.findMany({
+        where: {
+          student: { schoolId: user.schoolId },
+          streamId: dto.streamId,
+          academicYearId: dto.academicYearId,
+        },
+        include: {
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              stream: { select: { classroomId: true } },
+            },
+          },
+        },
+      });
+    for (const [i, studentPromotion] of studentPromotions.entries()) {
+      const fees = await this.prismaService.fee.findMany({
+        where: {
+          schoolId: user.schoolId,
+          classroomIDs: { has: studentPromotion.student.stream.classroomId },
+          academicYearId: dto.academicYearId,
+          optional: false,
+        },
+      });
+
+      worksheet.addRow({
+        no: i + 1,
+        name: studentPromotion.student.fullName,
+        term1: fees
+          .filter((fee) => fee.academicTerms.includes(EAcademicTerm.TERM1))
+          .reduce((a, fee) => a + fee.amount, 0),
+        term1Bal: 0, // TODO: Revisit this after working on payments,
+        term2: fees
+          .filter((fee) => fee.academicTerms.includes(EAcademicTerm.TERM2))
+          .reduce((a, fee) => a + fee.amount, 0),
+        term2Bal: 0, // TODO: Revisit this after working on payments,
+        term3: fees
+          .filter((fee) => fee.academicTerms.includes(EAcademicTerm.TERM3))
+          .reduce((a, fee) => a + fee.amount, 0),
+        term3Bal: 0, // TODO: Revisit this after working on payments,
+      });
+    }
+    return {
+      workbook,
+      filename: `FEES_CLEARANCE_REPORT_${stream.classroom.name}_${stream.name}`,
+    };
   }
 }
