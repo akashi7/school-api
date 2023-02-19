@@ -134,7 +134,7 @@ export class FeeService {
       await this.prismaService.studentPromotion.findFirst({
         where: {
           student: { schoolId: user.schoolId },
-          // studentId: id,
+          studentId: id,
           academicYearId: dto.academicYearId,
         },
         include: {

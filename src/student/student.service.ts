@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { ERole, Prisma, StudentPromotion, User } from "@prisma/client";
+import { ERole, Prisma, User } from "@prisma/client";
 import { endOfMonth, getMonth, startOfMonth } from "date-fns";
 import { ClassroomService } from "../classroom/classroom.service";
 import { PrismaService } from "../prisma.service";
@@ -35,53 +35,45 @@ export class StudentService {
     { page, size }: IPagination,
     user: User,
   ) {
-    const whereConditions: Prisma.StudentPromotionWhereInput = {
-      student: { schoolId: user.schoolId },
-    };
+    const whereConditions: Prisma.UserWhereInput = {};
+    const studentPromotionWhereInput: Prisma.StudentPromotionWhereInput = {};
     if (dto.academicYearId) whereConditions.academicYearId = dto.academicYearId;
     if (dto.classroomId)
       whereConditions.stream = {
         classroomId: dto.classroomId,
       };
-    if (dto.streamId) whereConditions.streamId = dto.classroomId;
+    if (dto.streamId) {
+      studentPromotionWhereInput.streamId = dto.streamId;
+      whereConditions.studentPromotions = {
+        some: { ...studentPromotionWhereInput },
+      };
+    }
     if (dto.search)
       whereConditions.OR = [
         {
-          student: { fullName: { contains: dto.search, mode: "insensitive" } },
-        },
-        {
-          stream: { name: { contains: dto.search, mode: "insensitive" } },
-        },
-        {
-          stream: {
-            classroom: { name: { contains: dto.search, mode: "insensitive" } },
-          },
+          fullName: { contains: dto.search, mode: "insensitive" },
         },
       ];
-    const result = await paginate<
-      StudentPromotion,
-      Prisma.StudentPromotionFindManyArgs
-    >(
-      this.prismaService.studentPromotion,
+    const result = await paginate<User, Prisma.UserFindManyArgs>(
+      this.prismaService.user,
       {
-        where: { ...whereConditions },
+        where: {
+          schoolId: user.schoolId,
+          role: ERole.STUDENT,
+          ...whereConditions,
+        },
         include: {
-          student: {
+          studentPromotions: {
+            where: { ...studentPromotionWhereInput },
             select: {
               id: true,
-              fullName: true,
-              gender: true,
-              address: true,
-              firstContactPhone: true,
-              secondContactPhone: true,
-              studentIdentifier: true,
-            },
-          },
-          stream: {
-            select: {
-              id: true,
-              name: true,
-              classroom: { select: { id: true, name: true } },
+              stream: {
+                select: {
+                  id: true,
+                  name: true,
+                  classroom: { select: { id: true, name: true } },
+                },
+              },
             },
           },
         },
@@ -194,27 +186,38 @@ export class StudentService {
 
   /**
    * Update a student
-   * @param id student id
+   * @param studentId student id
    * @param dto update object
    * @param user logged in user
    * @returns user (student)
    */
-  async update(id: string, dto: UpdateStudentDto, user: User) {
-    await this.findOne(id, user);
+  async update(studentId: string, dto: UpdateStudentDto, user: User) {
+    await this.findOne(studentId, user);
     if (dto.email) {
       const existingEmailStudent = await this.prismaService.user.findFirst({
-        where: { id: { not: id }, email: dto.email },
+        where: { id: { not: studentId }, email: dto.email },
       });
       if (existingEmailStudent)
         throw new BadRequestException("Email already exists");
     }
+    if (dto.parentPhoneNumber) {
+      const parent = await this.prismaService.user.findFirst({
+        where: { role: ERole.PARENT, children: { some: { id: studentId } } },
+      });
+      if (parent)
+        await this.prismaService.user.update({
+          where: { id: parent.id },
+          data: { phone: dto.parentPhoneNumber },
+        });
+    }
+    delete dto.parentPhoneNumber;
     await this.prismaService.user.update({
-      where: { id },
+      where: { id: studentId },
       data: {
         ...dto,
       },
     });
-    return await this.findOne(id);
+    return await this.findOne(studentId);
   }
 
   /**
