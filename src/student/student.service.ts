@@ -14,7 +14,6 @@ import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
 import { studentFields } from "./dto/student-fields";
 import { StudentSearchDto } from "./dto/student-search.dto";
-import { UpdatePromotionDto } from "./dto/update-promotion.dto";
 import { UpdateStudentDto } from "./dto/update-student.dto";
 
 @Injectable()
@@ -75,7 +74,9 @@ export class StudentService {
                 },
               },
             },
+            orderBy: { createdAt: "desc" },
           },
+          parent: { select: { id: true, phone: true } },
         },
       },
       +page,
@@ -161,6 +162,14 @@ export class StudentService {
       select: {
         ...studentFields,
         parent: { select: { id: true, phone: true } },
+        academicYear: { select: { id: true, name: true } },
+        stream: {
+          select: {
+            id: true,
+            name: true,
+            classroom: { select: { id: true, name: true } },
+          },
+        },
       },
     });
     if (!student) throw new NotFoundException("Student not found");
@@ -268,75 +277,6 @@ export class StudentService {
     });
   }
 
-  /**
-   * Update student promotion
-   * @param studentId
-   * @param studentPromotionId
-   * @param dto update object
-   * @param user logged in user
-   * @returns StudentPromotion
-   */
-  async updatePromotion(
-    studentId: string,
-    studentPromotionId: string,
-    dto: UpdatePromotionDto,
-    user: User,
-  ) {
-    await this.findOne(studentId, user);
-    const studentPromotion =
-      await this.prismaService.studentPromotion.findFirst({
-        where: { id: studentPromotionId, studentId: studentId },
-      });
-    if (!studentPromotion)
-      throw new NotFoundException("Student promotion not found");
-    if (dto.academicYearId) {
-      if (
-        !(await this.prismaService.academicYear.count({
-          where: { id: dto.academicYearId },
-        }))
-      )
-        throw new NotFoundException("Academic year not found");
-    }
-    if (dto.streamId) {
-      await this.classroomService.findOneStream(dto.streamId, null, user);
-    }
-
-    await this.prismaService.studentPromotion.update({
-      where: { id: studentPromotion.id },
-      data: {
-        ...dto,
-      },
-    });
-    return await this.prismaService.studentPromotion.findFirst({
-      where: { id: studentPromotionId, studentId: studentId },
-    });
-  }
-
-  /**
-   * Delete a student promotion
-   * @param studentId
-   * @param studentPromotionId
-   * @param user logged in user
-   * @returns student promotion id
-   */
-  async deletePromotion(
-    studentId: string,
-    studentPromotionId: string,
-    user: User,
-  ) {
-    await this.findOne(studentId, user);
-    const studentPromotion =
-      await this.prismaService.studentPromotion.findFirst({
-        where: { id: studentPromotionId, studentId: studentId },
-      });
-    if (!studentPromotion)
-      throw new NotFoundException("Student promotion not found");
-
-    await this.prismaService.studentPromotion.delete({
-      where: { id: studentPromotion.id },
-    });
-    return studentPromotionId;
-  }
   /**
    * Create extra fee
    * @param studentId

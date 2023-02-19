@@ -9,4 +9,7 @@ export const studentFields = {
   firstContactPhone: true,
   secondContactPhone: true,
   academicTerm: true,
+  address: true,
+  countryName: true,
+  countryCode: true,
 };

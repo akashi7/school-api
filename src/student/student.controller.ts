@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
+import { IsString } from "class-validator";
 import { Auth } from "../auth/decorators/auth.decorator";
 import { GetUser } from "../auth/decorators/get-user.decorator";
 import { FindFeesByStudentDto } from "../fee/dto/find-fees.dto";
@@ -104,38 +105,6 @@ export class StudentController {
   ) {
     const payload = await this.studentService.createPromotion(id, dto, user);
     return new GenericResponse("Promotion created", payload);
-  }
-
-  @Patch(":studentId/promotions/:promotionId")
-  @OkResponse()
-  async updatePromotion(
-    @Param("studentId") studentId: string,
-    @Param("promotionId") promotionId: string,
-    dto: UpdatePromotionDto,
-    @GetUser() user: User,
-  ) {
-    const payload = await this.studentService.updatePromotion(
-      studentId,
-      promotionId,
-      dto,
-      user,
-    );
-    return new GenericResponse("Promotion updated", payload);
-  }
-
-  @Delete(":studentId/promotions/:promotionId")
-  @OkResponse()
-  async deletePromotion(
-    @Param("studentId") studentId: string,
-    @Param("promotionId") promotionId: string,
-    @GetUser() user: User,
-  ) {
-    const payload = await this.studentService.deletePromotion(
-      studentId,
-      promotionId,
-      user,
-    );
-    return new GenericResponse("Promotion deleted", payload);
   }
 
   @Post(":id/extra-fees")

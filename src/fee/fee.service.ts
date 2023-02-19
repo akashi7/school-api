@@ -214,7 +214,7 @@ export class FeeService {
         throw new NotFoundException("Academic year not found");
     }
     if (
-      dto.classroomIDs.some(async (id) => {
+      dto.classroomIDs?.some(async (id) => {
         const count = await this.prismaService.classroom.count({
           where: { id, schoolId: user.schoolId },
         });
