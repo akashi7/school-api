@@ -11,3 +11,6 @@ School nestpay API is built with the following technologies:
 
 ## Swagger documentation
 The swagger documentation can be found on the following endpoint: `/docs/swagger-ui`
+
+## Authors
+- [Brian Gitego](https://github.com/gitegob) (gitegob@gmail.com)
