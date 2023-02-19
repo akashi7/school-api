@@ -129,6 +129,8 @@ model Transaction {
   phoneNumber   String?
   amount        Float?
   reason        String?
+  fee           Fee?           @relation(fields: [feeId], references: [id])
+  feeId         String?        @db.ObjectId
 }
 
 model AcademicYear {
@@ -186,6 +188,7 @@ model Fee {
   studentExtraFees StudentExtraFee[]
   schoolId         String?           @db.ObjectId
   school           School?           @relation(fields: [schoolId], references: [id])
+  transactions     Transaction[]
 }
 
 model StudentPromotion {

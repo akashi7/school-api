@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { EAcademicTerm, EFeeType, Fee, Prisma, User } from "@prisma/client";
+import { EAcademicTerm, Fee, Prisma, Transaction, User } from "@prisma/client";
 import { Workbook } from "exceljs";
 import { PrismaService } from "../prisma.service";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
@@ -15,6 +15,7 @@ import {
 } from "./dto/download-fees.dto";
 import { FindFeesByStudentDto, FindFeesDto } from "./dto/find-fees.dto";
 import { UpdateFeeDto } from "./dto/update-fee.dto";
+import { ViewStudentFeeDto } from "./dto/ViewStudentFee.dto";
 
 @Injectable()
 export class FeeService {
@@ -133,13 +134,15 @@ export class FeeService {
       await this.prismaService.studentPromotion.findFirst({
         where: {
           student: { schoolId: user.schoolId },
-          studentId: id,
+          // studentId: id,
           academicYearId: dto.academicYearId,
         },
         include: {
           student: { select: { stream: { select: { classroomId: true } } } },
         },
       });
+    if (!studentPromotion)
+      throw new NotFoundException("Student promotion not found");
     const fees = await this.prismaService.fee.findMany({
       where: {
         schoolId: user.schoolId,
@@ -147,17 +150,34 @@ export class FeeService {
           has: studentPromotion.student.stream.classroomId,
         },
         academicYearId: dto.academicYearId,
+        academicTerms: { has: dto.academicTerm },
+      },
+      include: {
+        transactions: {
+          select: {
+            id: true,
+            amount: true,
+          },
+        },
       },
     });
-    return {
-      additionalFees: fees.filter((f) => f.type === EFeeType.ADDITIONAL_FEE),
-      totalSchoolFees: fees
-        .filter((f) => f.type === EFeeType.SCHOOL_FEE)
-        .reduce((sum: number, f: Fee) => sum + (f.amount || 0), 0),
-      totalAdditionalFees: fees
-        .filter((f) => f.type === EFeeType.ADDITIONAL_FEE)
-        .reduce((sum: number, f: Fee) => sum + (f.amount || 0), 0),
-    };
+    const resultFees = [];
+    for (const fee of fees) {
+      const feeDto = new ViewStudentFeeDto();
+      feeDto.id = fee.id;
+      feeDto.name = fee.name;
+      feeDto.type = fee.type;
+      feeDto.optional = fee.optional;
+      feeDto.amount = fee.amount;
+      feeDto.createdAt = fee.createdAt;
+      feeDto.paid = fee.transactions.reduce(
+        (sum: number, t: Transaction) => sum + t.amount,
+        0,
+      );
+      feeDto.remaining = feeDto.amount - feeDto.paid;
+      resultFees.push(feeDto);
+    }
+    return resultFees;
   }
 
   /**
