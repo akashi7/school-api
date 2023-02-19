@@ -11,7 +11,6 @@ import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
 import { Auth } from "../auth/decorators/auth.decorator";
 import { GetUser } from "../auth/decorators/get-user.decorator";
-import { AllowRoles } from "../auth/decorators/roles.decorator";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { CreateSchoolDto } from "./dto/create-school.dto";
 import { UpdateSchoolDto } from "./dto/update-school.dto";
@@ -24,7 +23,6 @@ export class SchoolController {
   constructor(private readonly schoolService: SchoolService) {}
 
   @Post("schools")
-  @AllowRoles(ERole.ADMIN)
   async createSchool(@Body() dto: CreateSchoolDto) {
     const payload = await this.schoolService.create(dto);
     return new GenericResponse("School created", payload);
