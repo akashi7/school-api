@@ -2,6 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { EAcademicTerm, EFeeType } from "@prisma/client";
 import { IsEnum, IsString } from "class-validator";
 import { OptionalProperty } from "../../__shared__/decorators";
+import { EFeeStatus } from "../enums/fee-status.enum";
 
 export class FindFeesByStudentDto {
   @ApiProperty()
@@ -10,6 +11,9 @@ export class FindFeesByStudentDto {
   @ApiProperty({ enum: EAcademicTerm })
   @IsEnum(EAcademicTerm)
   academicTerm: EAcademicTerm;
+  @ApiProperty({ enum: EFeeStatus })
+  @IsEnum(EFeeStatus)
+  status: EFeeStatus;
 }
 
 export class FindFeesDto {
