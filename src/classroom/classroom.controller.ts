@@ -12,7 +12,6 @@ import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
 import { Auth } from "../auth/decorators/auth.decorator";
 import { GetUser } from "../auth/decorators/get-user.decorator";
-import { AllowRoles } from "../auth/decorators/roles.decorator";
 import {
   CreatedResponse,
   OkResponse,
@@ -55,7 +54,6 @@ export class ClassroomController {
   }
 
   @Get()
-  @AllowRoles()
   @PageResponse()
   async findAll(
     @Query() paginationDto: PaginationDto,
@@ -71,7 +69,6 @@ export class ClassroomController {
   }
 
   @Get("streams")
-  @AllowRoles()
   @PageResponse()
   async findAllSStreams(
     @Query() paginationDto: PaginationDto,
@@ -87,7 +84,6 @@ export class ClassroomController {
   }
 
   @Get(":id/streams")
-  @AllowRoles()
   @PageResponse()
   async findClassroomStreams(
     @Param("id") classroomId: string,
