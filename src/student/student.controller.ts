@@ -10,7 +10,6 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
-import { IsString } from "class-validator";
 import { Auth } from "../auth/decorators/auth.decorator";
 import { GetUser } from "../auth/decorators/get-user.decorator";
 import { FindFeesByStudentDto } from "../fee/dto/find-fees.dto";
@@ -28,7 +27,6 @@ import { CreateExtraFeeDto } from "./dto/create-extra-fee.dto";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
 import { StudentSearchDto } from "./dto/student-search.dto";
-import { UpdatePromotionDto } from "./dto/update-promotion.dto";
 import { UpdateStudentDto } from "./dto/update-student.dto";
 import { StudentService } from "./student.service";
 

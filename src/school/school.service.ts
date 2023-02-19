@@ -3,11 +3,12 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { ERole } from "@prisma/client";
+import { ERole, User } from "@prisma/client";
 import { PasswordEncryption } from "../auth/utils/password-encrytion.util";
 import { PrismaService } from "../prisma.service";
 import { CreateSchoolDto } from "./dto/create-school.dto";
 import { schoolFields } from "./dto/school-fields";
+import { UpdateSchoolDto } from "./dto/update-school.dto";
 
 @Injectable()
 export class SchoolService {
@@ -83,5 +84,25 @@ export class SchoolService {
     const school = await this.findOne(id);
     await this.prismaService.school.delete({ where: { id: school.id } });
     return id;
+  }
+  /**
+   * Update a school
+   * @param id school id
+   * @param dto update school object
+   * @param user Logged in user
+   * @returns Updated school
+   */
+  async update(id: string, dto: UpdateSchoolDto, user: User) {
+    const school = await this.prismaService.school.findFirst({ where: { id } });
+    if (!school) throw new NotFoundException("School not found");
+    if (user.role === ERole.SCHOOL && user.schoolId !== school.id)
+      throw new NotFoundException("This school is not found");
+    const result = await this.prismaService.school.update({
+      where: { id },
+      data: {
+        ...dto,
+      },
+    });
+    return result;
   }
 }
