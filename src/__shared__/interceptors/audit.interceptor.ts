@@ -27,10 +27,10 @@ export class AuditInterceptor implements NestInterceptor {
       tap(() => {
         const duration = Date.now() - now;
         Logger.log(
-          `[REQUEST] ${statusCode} ${method} ${url} by ${
-            request.user?.role || ""
-          } ${request?.user?.fullName || "anonymous"} ${duration}ms`,
-          context.getClass().name,
+          `${statusCode} ${method} ${url} by ${request.user?.role || ""} ${
+            request?.user?.fullName || "anonymous"
+          } ${duration}ms`,
+          "REQUEST",
         );
       }),
     );

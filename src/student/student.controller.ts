@@ -99,7 +99,7 @@ export class StudentController {
   @CreatedResponse()
   async createPromotion(
     @Param("id") id: string,
-    dto: CreatePromotionDto,
+    @Body() dto: CreatePromotionDto,
     @GetUser() user: User,
   ) {
     const payload = await this.studentService.createPromotion(id, dto, user);
