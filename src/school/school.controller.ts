@@ -40,19 +40,25 @@ export class SchoolController {
     return new GenericResponse("Current school retrieved", payload);
   }
 
+  @Patch("profile")
+  @Auth(ERole.SCHOOL)
+  async updateCurrentSchool(
+    @Body() dto: UpdateSchoolDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.schoolService.update(user.schoolId, dto);
+    return new GenericResponse("Current school updated", payload);
+  }
+
   @Get(":id")
   async findOne(@Param("id") id: string) {
     const payload = await this.schoolService.findOne(id);
     return new GenericResponse("School retrieved", payload);
   }
-  @Patch(":id")
-  @Auth(ERole.SCHOOL, ERole.ADMIN)
-  async update(
-    @Param("id") id: string,
-    @Body() dto: UpdateSchoolDto,
-    @GetUser() user: User,
-  ) {
-    const payload = await this.schoolService.update(id, dto, user);
+  @Patch("profile")
+  @Auth(ERole.SCHOOL)
+  async update(@Body() dto: UpdateSchoolDto, @GetUser() user: User) {
+    const payload = await this.schoolService.update(user.schoolId, dto);
     return new GenericResponse("School updated", payload);
   }
   @Delete(":id")

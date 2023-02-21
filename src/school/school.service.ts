@@ -1,13 +1,13 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { ERole, User } from "@prisma/client";
+import { ERole } from "@prisma/client";
 import { PasswordEncryption } from "../auth/utils/password-encrytion.util";
 import { PrismaService } from "../prisma.service";
 import { CreateSchoolDto } from "./dto/create-school.dto";
-import { schoolFields } from "./dto/school-fields";
 import { UpdateSchoolDto } from "./dto/update-school.dto";
 
 @Injectable()
@@ -22,28 +22,37 @@ export class SchoolService {
    * @param dto create object
    * @returns school
    */
-  async create(dto: CreateSchoolDto) {
-    if (
-      await this.prismaService.user.count({ where: { username: dto.username } })
-    )
+  async create({ username, password, ...schoolDto }: CreateSchoolDto) {
+    if (await this.prismaService.user.count({ where: { username } }))
       throw new BadRequestException("Username already exists");
-    return this.prismaService.$transaction(async (tx) => {
-      const newSchool = await tx.school.create({
-        data: {
-          ...dto,
-        },
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        const newSchool = await tx.school.create({
+          data: {
+            schoolName: schoolDto.schoolName,
+            schoolType: schoolDto.schoolType,
+            schoolTitle: schoolDto.schoolTitle,
+            schoolLogo: schoolDto.schoolLogo,
+            hasStudentIds: schoolDto.hasStudentIds,
+            countryName: schoolDto.countryName,
+            countryCode: schoolDto.countryCode,
+            address: schoolDto.address,
+          },
+        });
+        await tx.user.create({
+          data: {
+            role: ERole.SCHOOL,
+            username,
+            password: this.passwordEncryption.hashPassword(password),
+            schoolId: newSchool.id,
+          },
+        });
+        return newSchool;
       });
-      await tx.user.create({
-        data: {
-          role: ERole.SCHOOL,
-          ...dto,
-          password: this.passwordEncryption.hashPassword(dto.password),
-          schoolId: newSchool.id,
-        },
-        select: { ...schoolFields },
-      });
-      return newSchool;
-    });
+    } catch (error) {
+      Logger.error(error);
+      throw new BadRequestException("Could not create school");
+    }
   }
 
   /**
@@ -51,11 +60,7 @@ export class SchoolService {
    * @returns schools
    */
   async findAll() {
-    const payload = await this.prismaService.school.findMany({
-      select: {
-        ...schoolFields,
-      },
-    });
+    const payload = await this.prismaService.school.findMany({ where: {} });
     return payload;
   }
 
@@ -69,7 +74,6 @@ export class SchoolService {
       where: {
         id,
       },
-      select: { ...schoolFields },
     });
     if (!school) throw new NotFoundException("School not found");
     return school;
@@ -85,24 +89,19 @@ export class SchoolService {
     await this.prismaService.school.delete({ where: { id: school.id } });
     return id;
   }
+
   /**
    * Update a school
-   * @param id school id
+   * @param schoolId school id
    * @param dto update school object
-   * @param user Logged in user
    * @returns Updated school
    */
-  async update(id: string, dto: UpdateSchoolDto, user: User) {
-    const school = await this.prismaService.school.findFirst({ where: { id } });
-    if (!school) throw new NotFoundException("School not found");
-    if (user.role === ERole.SCHOOL && user.schoolId !== school.id)
-      throw new NotFoundException("This school is not found");
-    const result = await this.prismaService.school.update({
-      where: { id },
-      data: {
-        ...dto,
-      },
+  async update(schoolId: string, dto: UpdateSchoolDto) {
+    const school = await this.findOne(schoolId);
+    await this.prismaService.school.update({
+      where: { id: school.id },
+      data: { ...dto },
     });
-    return result;
+    return await this.findOne(school.id);
   }
 }
