@@ -72,4 +72,16 @@ export class ParentService {
     if (!user) throw new NotFoundException("Parent not found");
     return user;
   }
+
+  async getChildren(id: string) {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        id,
+        role: ERole.PARENT,
+      },
+      include: { children: true },
+    });
+    if (!user) throw new NotFoundException("Parent not found");
+    return user.children;
+  }
 }
