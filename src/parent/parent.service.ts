@@ -79,7 +79,11 @@ export class ParentService {
         id,
         role: ERole.PARENT,
       },
-      include: { children: true },
+      include: {
+        children: {
+          include: { stream: { include: { classroom: true } } },
+        },
+      },
     });
     if (!user) throw new NotFoundException("Parent not found");
     return user.children;
