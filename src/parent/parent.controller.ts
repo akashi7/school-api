@@ -2,8 +2,9 @@ import { Body, Controller, Post } from "@nestjs/common";
 
 import { Get, Param } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { ERole } from "@prisma/client";
+import { ERole, User } from "@prisma/client";
 import { Auth } from "../auth/decorators/auth.decorator";
+import { GetUser } from "../auth/decorators/get-user.decorator";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { CreateParentDto } from "./dto/create-parent.dto";
 import { ParentService } from "./parent.service";
@@ -17,6 +18,13 @@ export class ParentController {
   async findAll() {
     const payload = await this.parentService.findAll();
     return new GenericResponse("Parents retrieved", payload);
+  }
+
+  @Get("children")
+  @Auth(ERole.PARENT)
+  async getChildren(@GetUser() user: User) {
+    const payload = await this.parentService.getChildren(user.id);
+    return new GenericResponse("Children retrieved", payload);
   }
 
   @Get(":id")
