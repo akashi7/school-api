@@ -117,11 +117,18 @@ export class AuthController {
   @Get("/logout")
   @OkResponse()
   @Auth()
-  async logout(
-    @Res({ passthrough: true }) response: Response,
-    @GetUser() user: User,
-  ): Promise<GenericResponse<void>> {
+  async logout(@GetUser() user: User): Promise<GenericResponse<void>> {
     await this.authService.logout(user);
     return new GenericResponse("Logged out successfully");
+  }
+
+  @Get("/profile")
+  @OkResponse()
+  @Auth()
+  async getProfile(
+    @GetUser() user: User,
+  ): Promise<GenericResponse<Partial<User>>> {
+    const payload = await this.authService.getProfile(user);
+    return new GenericResponse("Profile retrieved successfully", payload);
   }
 }

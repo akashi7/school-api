@@ -153,11 +153,22 @@ export class StudentService {
   async findOne(id: string, user?: User) {
     const student = await this.prismaService.user.findFirst({
       where: user
-        ? {
-            id,
-            role: ERole.STUDENT,
-            schoolId: user.schoolId,
-          }
+        ? user.role === ERole.SCHOOL
+          ? {
+              id,
+              role: ERole.STUDENT,
+              schoolId: user.schoolId,
+            }
+          : user.role === ERole.PARENT
+          ? {
+              id,
+              role: ERole.STUDENT,
+              parent: { id: user.id },
+            }
+          : {
+              id: user.id,
+              role: ERole.STUDENT,
+            }
         : { id, role: ERole.STUDENT },
       select: {
         ...studentFields,

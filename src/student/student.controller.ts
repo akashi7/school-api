@@ -59,6 +59,7 @@ export class StudentController {
   }
 
   @Get(":id")
+  @Auth(ERole.PARENT, ERole.SCHOOL, ERole.STUDENT)
   @OkResponse()
   async getStudent(@Param("id") id: string, @GetUser() user: User) {
     const payload = await this.studentService.findOne(id, user);
