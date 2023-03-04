@@ -81,7 +81,11 @@ export class ParentService {
       },
       include: {
         children: {
-          include: { stream: { include: { classroom: true } }, school: true },
+          include: {
+            stream: { include: { classroom: true } },
+            school: true,
+            academicYear: true,
+          },
         },
       },
     });
