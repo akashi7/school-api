@@ -181,6 +181,7 @@ export class StudentService {
             classroom: { select: { id: true, name: true } },
           },
         },
+        school: true,
       },
     });
     if (!student) throw new NotFoundException("Student not found");
