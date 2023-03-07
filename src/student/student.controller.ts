@@ -67,6 +67,7 @@ export class StudentController {
   }
 
   @Get(":id/fees")
+  @Auth(ERole.PARENT, ERole.SCHOOL)
   @OkResponse()
   async findFeesByStudent(
     @Param("id") id: string,

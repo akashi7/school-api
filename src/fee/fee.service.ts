@@ -3,7 +3,14 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { EAcademicTerm, Fee, Prisma, Transaction, User } from "@prisma/client";
+import {
+  EAcademicTerm,
+  ERole,
+  Fee,
+  Prisma,
+  Transaction,
+  User,
+} from "@prisma/client";
 import { Workbook } from "exceljs";
 import { PrismaService } from "../prisma.service";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
@@ -133,8 +140,10 @@ export class FeeService {
     const studentPromotion =
       await this.prismaService.studentPromotion.findFirst({
         where: {
-          student: { schoolId: user.schoolId },
-          studentId: id,
+          student:
+            user.role === ERole.SCHOOL
+              ? { id, schoolId: user.schoolId }
+              : { id, parentId: user.id },
           academicYearId: dto.academicYearId,
         },
         include: {
