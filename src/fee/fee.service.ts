@@ -143,6 +143,8 @@ export class FeeService {
           student:
             user.role === ERole.SCHOOL
               ? { id, schoolId: user.schoolId }
+              : user.role === ERole.STUDENT
+              ? { id: user.id }
               : { id, parentId: user.id },
           academicYearId: dto.academicYearId,
         },
@@ -212,8 +214,6 @@ export class FeeService {
    */
   async update(id: string, dto: UpdateFeeDto, user: User) {
     await this.findOne(id, user);
-    delete dto.classroomIDs;
-
     if (dto.academicYearId) {
       if (
         !(await this.prismaService.academicYear.count({

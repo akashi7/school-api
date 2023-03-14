@@ -1,6 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { ESchoolType } from "@prisma/client";
-import { IsBoolean, IsEnum, IsISO31661Alpha2, IsString } from "class-validator";
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsISO31661Alpha2,
+  IsPhoneNumber,
+  IsString,
+} from "class-validator";
 
 export class CreateSchoolDto {
   @IsString()
@@ -24,4 +31,8 @@ export class CreateSchoolDto {
   countryCode: string;
   @IsString()
   address: string;
+  @IsPhoneNumber()
+  phone: string;
+  @IsEmail()
+  email: string;
 }
