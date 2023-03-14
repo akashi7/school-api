@@ -67,7 +67,7 @@ export class StudentController {
   }
 
   @Get(":id/fees")
-  @Auth(ERole.PARENT, ERole.SCHOOL)
+  @Auth(ERole.PARENT, ERole.SCHOOL, ERole.STUDENT)
   @OkResponse()
   async findFeesByStudent(
     @Param("id") id: string,
@@ -96,15 +96,14 @@ export class StudentController {
     return new GenericResponse("Student deleted", payload);
   }
 
-  @Post(":id/promotions")
+  @Post("promotions")
   @CreatedResponse()
   async createPromotion(
-    @Param("id") id: string,
     @Body() dto: CreatePromotionDto,
     @GetUser() user: User,
   ) {
-    const payload = await this.studentService.createPromotion(id, dto, user);
-    return new GenericResponse("Promotion created", payload);
+    const payload = await this.studentService.createPromotions(dto, user);
+    return new GenericResponse("Promotions created", payload);
   }
 
   @Post(":id/extra-fees")

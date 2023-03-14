@@ -45,6 +45,8 @@ export class SchoolService {
             username,
             password: this.passwordEncryption.hashPassword(password),
             schoolId: newSchool.id,
+            phone: schoolDto.phone,
+            email: schoolDto.email,
           },
         });
         return newSchool;

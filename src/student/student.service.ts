@@ -52,6 +52,9 @@ export class StudentService {
         {
           fullName: { contains: dto.search, mode: "insensitive" },
         },
+        {
+          studentIdentifier: { contains: dto.search, mode: "insensitive" },
+        },
       ];
     const result = await paginate<User, Prisma.UserFindManyArgs>(
       this.prismaService.user,
@@ -255,37 +258,41 @@ export class StudentService {
 
   /**
    * Create a student promotion
-   * @param studentId student id
+   * @param studentIds student id
    * @param dto create object
    * @param user logged in user
    * @returns StudentPromotion
    */
-  async createPromotion(
-    studentId: string,
-    dto: CreatePromotionDto,
-    user: User,
-  ) {
-    await this.findOne(studentId, user);
+  async createPromotions(dto: CreatePromotionDto, user: User) {
     const academicYear = await this.prismaService.academicYear.findFirst({
       where: { id: dto.academicYearId },
     });
     if (!academicYear) throw new NotFoundException("Academic year not found");
     await this.classroomService.findOneStream(dto.streamId, null, user);
-    return await this.prismaService.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: studentId },
-        data: {
-          academicYearId: dto.academicYearId,
-          streamId: dto.streamId,
-        },
-      });
-      return await tx.studentPromotion.create({
-        data: {
-          studentId,
-          academicYearId: dto.academicYearId,
-          streamId: dto.streamId,
-        },
-      });
+
+    await this.prismaService.$transaction(async (tx) => {
+      for (const studentId of dto.studentIds) {
+        const student = await tx.user.findFirst({
+          where: { id: studentId, schoolId: user.schoolId },
+        });
+        if (!student)
+          throw new NotFoundException(`Student [${studentId}] not found`);
+
+        await tx.user.update({
+          where: { id: studentId },
+          data: {
+            academicYearId: dto.academicYearId,
+            streamId: dto.streamId,
+          },
+        });
+        await tx.studentPromotion.create({
+          data: {
+            studentId,
+            academicYearId: dto.academicYearId,
+            streamId: dto.streamId,
+          },
+        });
+      }
     });
   }
 
