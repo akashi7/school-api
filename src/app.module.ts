@@ -7,12 +7,13 @@ import {
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { AcademicYearModule } from "./academic-year/academic-year.module";
-import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { AuthModule } from "./auth/auth.module";
 import { ClassroomModule } from "./classroom/classroom.module";
 import { FeeModule } from "./fee/fee.module";
 import { ParentModule } from "./parent/parent.module";
+import { PaymentModule } from "./payment/payment.module";
+import { StripeModule } from "./payment/stripe.module";
 import { PrismaModule } from "./prisma.module";
 import { PrismaService } from "./prisma.service";
 import { SchoolModule } from "./school/school.module";
@@ -37,8 +38,11 @@ import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
     ClassroomModule,
     FeeModule,
     AcademicYearModule,
+    PaymentModule,
+    StripeModule.forRoot(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2022-11-15",
+    }),
   ],
-  controllers: [AppController],
   providers: [
     AppService,
     {
