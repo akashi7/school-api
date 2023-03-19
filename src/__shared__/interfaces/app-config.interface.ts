@@ -5,9 +5,16 @@ export interface IAppConfig {
   jwt?: JwtConfig;
   allowedOrigins?: string[];
   swaggerEnabled?: boolean;
+  stripe?: IStripeConfig;
 }
 
 interface JwtConfig {
   secret: string;
   expiresIn: string | number;
+}
+
+interface IStripeConfig {
+  secretKey: string;
+  publicKey: string;
+  webhookSecret: string;
 }

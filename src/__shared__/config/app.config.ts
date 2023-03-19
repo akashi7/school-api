@@ -32,7 +32,7 @@ export function configureSwagger(app: INestApplication): void {
   const API_TITLE = "School Nestpay";
   const API_DESCRIPTION = "API Doc. for School Nestpay API";
   const API_VERSION = "1.0";
-  const SWAGGER_URL = "docs/swagger-ui";
+  const SWAGGER_URL = "/swagger";
   const options = new DocumentBuilder()
     .setTitle(API_TITLE)
     .setDescription(API_DESCRIPTION)
@@ -96,9 +96,8 @@ export function configure(app: INestApplication): void {
   app.setGlobalPrefix("api/v1");
   app.enableCors(corsConfig());
   configureSwagger(app);
-  const configService = app.get(ConfigService);
-  const env = configService.get("env");
-  if (["development", "staging"].includes(env)) {
+  const configService = app.get(ConfigService<IAppConfig>);
+  if (configService.get("swaggerEnabled")) {
     configureSwagger(app);
   }
 }

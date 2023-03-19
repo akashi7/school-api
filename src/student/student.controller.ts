@@ -13,6 +13,7 @@ import { ERole, User } from "@prisma/client";
 import { Auth } from "../auth/decorators/auth.decorator";
 import { GetUser } from "../auth/decorators/get-user.decorator";
 import { FindFeesByStudentDto } from "../fee/dto/find-fees.dto";
+import { PayFeeDto, PayFeeWithThirdPartyDto } from "../fee/dto/pay-fee.dto";
 import { FeeService } from "../fee/fee.service";
 import {
   CreatedResponse,
@@ -76,6 +77,38 @@ export class StudentController {
   ) {
     const payload = await this.feeService.findFeesByStudent(id, dto, user);
     return new GenericResponse("Student fees retrieved", payload);
+  }
+
+  @Post(":studentId/fees/:feeId/pay")
+  async payFee(
+    @Param("studentId") studentId: string,
+    @Param("feeId") feeId: string,
+    @Body() dto: PayFeeDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.feeService.addFeePayment(
+      studentId,
+      feeId,
+      dto,
+      user,
+    );
+    return new GenericResponse("Fee paid", payload);
+  }
+
+  @Post(":studentId/fees/:feeId/pay/third-party")
+  async payFeeWithThirdParty(
+    @Param("studentId") studentId: string,
+    @Param("feeId") feeId: string,
+    @Body() dto: PayFeeWithThirdPartyDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.feeService.payFeeWithThirdParty(
+      studentId,
+      feeId,
+      dto,
+      user,
+    );
+    return new GenericResponse("Fee payment initiated", payload);
   }
 
   @Patch(":id")
