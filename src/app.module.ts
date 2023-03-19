@@ -18,7 +18,6 @@ import { PrismaModule } from "./prisma.module";
 import { PrismaService } from "./prisma.service";
 import { SchoolModule } from "./school/school.module";
 import { StudentModule } from "./student/student.module";
-import { TransactionModule } from "./transaction/transaction.module";
 import { appConfig } from "./__shared__/config/app.config";
 import { GlobalExceptionFilter } from "./__shared__/filters/global-exception.filter";
 import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
@@ -34,7 +33,6 @@ import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
     StudentModule,
     ParentModule,
     SchoolModule,
-    TransactionModule,
     ClassroomModule,
     FeeModule,
     AcademicYearModule,

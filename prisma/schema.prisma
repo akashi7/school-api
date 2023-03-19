@@ -16,8 +16,9 @@ enum ERole {
 }
 
 enum EPaymentMethod {
-  AIRTEL
-  MTN
+  STRIPE
+  MPESA
+  OTHER
 }
 
 enum EAcademicTerm {
@@ -87,7 +88,7 @@ model User {
 
   studentPromotions StudentPromotion[]
   studentExtraFees  StudentExtraFee[]
-  paymentsMade      Transaction[]
+  paymentsMade      Payment[]
 
   // PARENT
   phone    String? @unique
@@ -110,11 +111,11 @@ model School {
 
   fees             Fee[]
   students         User[]
-  paymentsReceived Transaction[]
+  paymentsReceived Payment[]
   classrooms       Classroom[]
 }
 
-model Transaction {
+model Payment {
   id            String         @id @default(auto()) @map("_id") @db.ObjectId
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now())
@@ -128,7 +129,8 @@ model Transaction {
   date          DateTime
   phoneNumber   String?
   amount        Float?
-  reason        String?
+  description   String?
+  status        String?        @default("PENDING")
   fee           Fee?           @relation(fields: [feeId], references: [id])
   feeId         String?        @db.ObjectId
 }
@@ -188,7 +190,7 @@ model Fee {
   studentExtraFees StudentExtraFee[]
   schoolId         String?           @db.ObjectId
   school           School?           @relation(fields: [schoolId], references: [id])
-  transactions     Transaction[]
+  payments         Payment[]
 }
 
 model StudentPromotion {

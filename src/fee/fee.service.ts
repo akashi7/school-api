@@ -5,13 +5,17 @@ import {
 } from "@nestjs/common";
 import {
   EAcademicTerm,
+  EPaymentMethod,
   ERole,
   Fee,
+  Payment,
   Prisma,
-  Transaction,
   User,
 } from "@prisma/client";
 import { Workbook } from "exceljs";
+import Stripe from "stripe";
+import { EPaymentStatus } from "../payment/enums";
+import { PaymentService } from "../payment/payment.service";
 import { PrismaService } from "../prisma.service";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
 import { paginate } from "../__shared__/utils/pagination.util";
@@ -21,12 +25,16 @@ import {
   DownloadFeesByStudentsDto,
 } from "./dto/download-fees.dto";
 import { FindFeesByStudentDto, FindFeesDto } from "./dto/find-fees.dto";
+import { PayFeeDto, PayFeeWithThirdPartyDto } from "./dto/pay-fee.dto";
 import { UpdateFeeDto } from "./dto/update-fee.dto";
 import { ViewStudentFeeDto } from "./dto/ViewStudentFee.dto";
 
 @Injectable()
 export class FeeService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly paymentService: PaymentService,
+  ) {}
 
   /**
    * Create a fee
@@ -164,10 +172,11 @@ export class FeeService {
         academicTerms: { has: dto.academicTerm },
       },
       include: {
-        transactions: {
+        payments: {
           select: {
             id: true,
             amount: true,
+            status: true,
           },
         },
       },
@@ -181,10 +190,9 @@ export class FeeService {
       feeDto.optional = fee.optional;
       feeDto.amount = fee.amount;
       feeDto.createdAt = fee.createdAt;
-      feeDto.paid = fee.transactions.reduce(
-        (sum: number, t: Transaction) => sum + t.amount,
-        0,
-      );
+      feeDto.paid = fee.payments
+        .filter((p) => p.status === EPaymentStatus.SUCCESS)
+        .reduce((sum: number, t: Payment) => sum + t.amount, 0);
       feeDto.remaining = feeDto.amount - feeDto.paid;
       resultFees.push(feeDto);
     }
@@ -380,5 +388,87 @@ export class FeeService {
       workbook,
       filename: `FEES_CLEARANCE_REPORT_${stream.classroom.name}_${stream.name}`,
     };
+  }
+
+  async addFeePayment(
+    studentId: string,
+    feeId: string,
+    dto: PayFeeDto,
+    user: User,
+  ) {
+    const student = await this.prismaService.user.findFirst({
+      where: {
+        id: studentId,
+        role: ERole.STUDENT,
+        schoolId: user.schoolId,
+      },
+    });
+
+    if (!student) throw new NotFoundException("Student not found");
+    const fee = await this.prismaService.fee.findFirst({
+      where: { id: feeId, schoolId: user.schoolId },
+    });
+    if (!fee) throw new NotFoundException("Fee not found");
+    const transaction = await this.prismaService.payment.create({
+      data: {
+        amount: dto.amount,
+        feeId,
+        studentId,
+        schoolId: user.schoolId,
+        paymentMethod: dto.paymentMethod,
+        referenceCode: dto.referenceCode,
+        date: dto.date,
+        description: dto.description,
+        phoneNumber: dto.phoneNumber,
+      },
+    });
+    return transaction;
+  }
+
+  async payFeeWithThirdParty(
+    studentId: string,
+    feeId: string,
+    dto: PayFeeWithThirdPartyDto,
+    user: User,
+  ) {
+    const student =
+      user.role === ERole.SCHOOL
+        ? await this.prismaService.user.findFirst({
+            where: {
+              id: studentId,
+              role: ERole.STUDENT,
+              schoolId: user.schoolId,
+            },
+          })
+        : await this.prismaService.user.findFirst({
+            where: { id: user.id, role: ERole.STUDENT },
+          });
+
+    if (!student) throw new NotFoundException("Student not found");
+    const fee = await this.prismaService.fee.findFirst({
+      where: { id: feeId, schoolId: user.schoolId },
+    });
+    if (!fee) throw new NotFoundException("Fee not found");
+    const newPayment = await this.prismaService.payment.create({
+      data: {
+        amount: dto.amount,
+        feeId,
+        studentId,
+        schoolId: user.schoolId,
+        paymentMethod: dto.method,
+        description: dto.description,
+        phoneNumber: dto.phone,
+        referenceCode: null,
+        date: new Date(),
+      },
+    });
+    let result: Stripe.Response<Stripe.PaymentIntent>;
+    if (dto.method === EPaymentMethod.STRIPE)
+      result = await this.paymentService.createStripePaymentIntent(dto);
+    await this.prismaService.payment.update({
+      where: { id: newPayment.id },
+      data: { referenceCode: result.id },
+    });
+    return result.client_secret;
   }
 }

@@ -1,19 +1,21 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { EPaymentMethod } from "@prisma/client";
 import Stripe from "stripe";
+import { PayFeeWithThirdPartyDto } from "../fee/dto/pay-fee.dto";
+import { PrismaService } from "../prisma.service";
 import { stripeConstants } from "./config/stripe";
-import { CreatePaymentDto } from "./dto/create-payment.dto";
+import { EPaymentStatus } from "./enums";
 
 @Injectable()
 export class PaymentService {
   constructor(
     @Inject(stripeConstants.STRIPE_CLIENT) private readonly stripe: Stripe,
+    private readonly prismaService: PrismaService,
   ) {}
 
-  async createStripePayment(createPaymentDto: CreatePaymentDto) {
-    return await this.createStripePaymentIntent(createPaymentDto);
-  }
-
-  async createStripePaymentIntent(createPaymentDto: CreatePaymentDto) {
+  async createStripePaymentIntent(
+    createPaymentDto: PayFeeWithThirdPartyDto,
+  ): Promise<Stripe.Response<Stripe.PaymentIntent>> {
     const paymentIntent = await this.stripe.paymentIntents.create({
       amount: createPaymentDto.amount,
       currency: createPaymentDto.currency,
@@ -23,6 +25,50 @@ export class PaymentService {
       },
       //   payment_method: "card",
     });
-    return paymentIntent.client_secret;
+    return paymentIntent;
+  }
+  async handleWebhookEvent(event: Stripe.Event) {
+    const payment = await this.prismaService.payment.findFirst({
+      where: {
+        referenceCode: event.data.object["id"],
+        paymentMethod: EPaymentMethod.STRIPE,
+      },
+    });
+    if (!payment) return;
+    switch (event.type) {
+      case "payment_intent.succeeded":
+        const paymentIntentSucceeded = event.data.object;
+        Logger.log(paymentIntentSucceeded, "payment_intent.succeeded");
+        await this.prismaService.payment.update({
+          where: {
+            id: payment.id,
+          },
+          data: {
+            status: EPaymentStatus.SUCCESS,
+          },
+        });
+        break;
+      case "payment_intent.payment_failed":
+        await this.prismaService.payment.update({
+          where: {
+            id: payment.id,
+          },
+          data: {
+            status: EPaymentStatus.FAILED,
+          },
+        });
+      case "payment_intent.canceled":
+        await this.prismaService.payment.update({
+          where: {
+            id: payment.id,
+          },
+          data: {
+            status: EPaymentStatus.FAILED,
+          },
+        });
+
+      default:
+        break;
+    }
   }
 }
