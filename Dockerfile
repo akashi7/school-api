@@ -1,15 +1,15 @@
-FROM node:16.17.0-bullseye-slim As build
-
+FROM node:16.17.0-bullseye-slim AS base
 WORKDIR /usr/src/app
-
-# THIS IS TO ENABLE PRISMA DO DETECT REQUIRED FILES
+# THIS IS TO ENABLE PRISMA TO DETECT REQUIRED FILES
 RUN apt-get update && apt-get install -y openssl libssl-dev
+
+FROM base AS build
 COPY ./package.json ./yarn.lock ./
 RUN yarn install --frozen-lockfile
 COPY . .
 RUN yarn prisma:generate && yarn build
 
-FROM node:16.17.0-bullseye-slim As production
+FROM base AS production
 COPY --from=build /usr/src/app/dist ./dist
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/package.json ./package.json
