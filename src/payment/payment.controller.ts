@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Get,
   HttpCode,
@@ -14,8 +13,6 @@ import { ConfigService } from "@nestjs/config";
 import { ApiTags } from "@nestjs/swagger";
 import { Request } from "express";
 import Stripe from "stripe";
-import { Auth } from "../auth/decorators/auth.decorator";
-import { PayFeeWithThirdPartyDto } from "../fee/dto/pay-fee.dto";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
 import { stripeConstants } from "./config/stripe";
@@ -30,14 +27,7 @@ export class PaymentController {
     private readonly configService: ConfigService<IAppConfig>,
   ) {}
 
-  @Post("stripe")
-  @Auth()
-  async createStripePayment(@Body() dto: PayFeeWithThirdPartyDto) {
-    const result = await this.paymentService.createStripePaymentIntent(dto);
-    return new GenericResponse("Stripe payment intent", result);
-  }
   @Get("stripe/key")
-  @Auth()
   async getStripeKey() {
     return new GenericResponse(
       "Stripe key",
@@ -56,10 +46,17 @@ export class PaymentController {
         sig,
         endpointSecret,
       );
-      await this.paymentService.handleWebhookEvent(event);
+      await this.paymentService.handleStripeWebhookEvent(event);
     } catch (err) {
       throw new BadRequestException(`Webhook Error: ${err.message}`);
     }
+    return;
+  }
+
+  @Post("mpesa/callback")
+  @HttpCode(HttpStatus.OK)
+  async mpesaCallbackHandler(@Req() req: Request) {
+    await this.paymentService.handleMpesaCallback(req.body);
     return;
   }
 }

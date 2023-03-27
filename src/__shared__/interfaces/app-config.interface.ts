@@ -6,6 +6,7 @@ export interface IAppConfig {
   allowedOrigins?: string[];
   swaggerEnabled?: boolean;
   stripe?: IStripeConfig;
+  mpesa?: IMpesaConfig;
 }
 
 interface JwtConfig {
@@ -17,4 +18,13 @@ interface IStripeConfig {
   secretKey: string;
   publicKey: string;
   webhookSecret: string;
+}
+
+interface IMpesaConfig {
+  url: string;
+  consumerKey: string;
+  consumerSecret: string;
+  shortCode: string;
+  passKey: string;
+  callbackUrl: string;
 }
