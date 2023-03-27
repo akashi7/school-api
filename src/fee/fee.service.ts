@@ -13,7 +13,6 @@ import {
   User,
 } from "@prisma/client";
 import { Workbook } from "exceljs";
-import Stripe from "stripe";
 import { EPaymentStatus } from "../payment/enums";
 import { PaymentService } from "../payment/payment.service";
 import { PrismaService } from "../prisma.service";
@@ -462,13 +461,25 @@ export class FeeService {
         date: new Date(),
       },
     });
-    let result: Stripe.Response<Stripe.PaymentIntent>;
-    if (dto.method === EPaymentMethod.STRIPE)
-      result = await this.paymentService.createStripePaymentIntent(dto);
-    await this.prismaService.payment.update({
-      where: { id: newPayment.id },
-      data: { referenceCode: result.id },
-    });
-    return result.client_secret;
+    switch (dto.method) {
+      case EPaymentMethod.STRIPE:
+        const stripeResult =
+          await this.paymentService.createStripePaymentIntent(dto);
+        await this.prismaService.payment.update({
+          where: { id: newPayment.id },
+          data: { referenceCode: stripeResult.id },
+        });
+        return stripeResult.client_secret;
+      case EPaymentMethod.MPESA:
+        const mpesaResult = await this.paymentService.createMpesaPayment(
+          dto.amount,
+          dto.phone,
+        );
+        await this.prismaService.payment.update({
+          where: { id: newPayment.id },
+          data: { referenceCode: mpesaResult.CheckoutRequestID },
+        });
+        return mpesaResult.ResponseDescription;
+    }
   }
 }

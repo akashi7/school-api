@@ -21,6 +21,19 @@ export function appConfig(): IAppConfig {
       secret: process.env.JWT_SECRET,
       expiresIn: process.env.JWT_EXPIRES_IN,
     },
+    mpesa: {
+      url: process.env.MPESA_URL,
+      consumerKey: process.env.MPESA_CONSUMER_KEY,
+      consumerSecret: process.env.MPESA_CONSUMER_SECRET,
+      shortCode: process.env.MPESA_SHORT_CODE,
+      passKey: process.env.MPESA_PASS_KEY,
+      callbackUrl: process.env.MPESA_CALLBACK_URL,
+    },
+    stripe: {
+      secretKey: process.env.STRIPE_SECRET_KEY,
+      publicKey: process.env.STRIPE_PUBLIC_KEY,
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    },
   };
 }
 
