@@ -22,7 +22,7 @@ export function appConfig(): IAppConfig {
       expiresIn: process.env.JWT_EXPIRES_IN,
     },
     mpesa: {
-      url: process.env.MPESA_URL,
+      url: process.env.MPESA_API_URL,
       consumerKey: process.env.MPESA_CONSUMER_KEY,
       consumerSecret: process.env.MPESA_CONSUMER_SECRET,
       shortCode: process.env.MPESA_SHORT_CODE,

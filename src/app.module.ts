@@ -13,7 +13,6 @@ import { ClassroomModule } from "./classroom/classroom.module";
 import { FeeModule } from "./fee/fee.module";
 import { ParentModule } from "./parent/parent.module";
 import { PaymentModule } from "./payment/payment.module";
-import { StripeModule } from "./payment/stripe.module";
 import { PrismaModule } from "./prisma.module";
 import { PrismaService } from "./prisma.service";
 import { SchoolModule } from "./school/school.module";
@@ -37,9 +36,6 @@ import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
     FeeModule,
     AcademicYearModule,
     PaymentModule,
-    StripeModule.forRoot(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2022-11-15",
-    }),
   ],
   providers: [
     AppService,

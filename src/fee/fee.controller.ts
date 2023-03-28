@@ -23,7 +23,6 @@ import {
   DownloadFeesByStudentsDto,
 } from "./dto/download-fees.dto";
 import { FindFeesDto } from "./dto/find-fees.dto";
-import { PayFeeDto } from "./dto/pay-fee.dto";
 import { UpdateFeeDto } from "./dto/update-fee.dto";
 import { FeeService } from "./fee.service";
 
