@@ -1,13 +1,18 @@
 import { HttpService } from "@nestjs/axios";
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  RawBodyRequest,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { EPaymentMethod } from "@prisma/client";
+import { Request } from "express";
 import { lastValueFrom } from "rxjs";
 import Stripe from "stripe";
 import { PayFeeWithThirdPartyDto } from "../fee/dto/pay-fee.dto";
 import { PrismaService } from "../prisma.service";
 import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
-import { stripeConstants } from "./config/stripe";
 import { EPaymentStatus } from "./enums";
 import {
   IMpesaAuthResponse,
@@ -17,12 +22,16 @@ import {
 
 @Injectable()
 export class PaymentService {
+  private stripe: Stripe;
   constructor(
-    @Inject(stripeConstants.STRIPE_CLIENT) private readonly stripe: Stripe,
     private readonly prismaService: PrismaService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService<IAppConfig>,
-  ) {}
+  ) {
+    this.stripe = new Stripe(this.configService.get("stripe").secretKey, {
+      apiVersion: "2022-11-15",
+    });
+  }
 
   async createStripePaymentIntent(
     createPaymentDto: PayFeeWithThirdPartyDto,
@@ -38,48 +47,60 @@ export class PaymentService {
     });
     return paymentIntent;
   }
-  async handleStripeWebhookEvent(event: Stripe.Event) {
-    const payment = await this.prismaService.payment.findFirst({
-      where: {
-        referenceCode: event.data.object["id"],
-        paymentMethod: EPaymentMethod.STRIPE,
-      },
-    });
-    if (!payment) return;
-    switch (event.type) {
-      case "payment_intent.succeeded":
-        const paymentIntentSucceeded = event.data.object;
-        Logger.log(paymentIntentSucceeded, "payment_intent.succeeded");
-        await this.prismaService.payment.update({
-          where: {
-            id: payment.id,
-          },
-          data: {
-            status: EPaymentStatus.SUCCESS,
-          },
-        });
-        break;
-      case "payment_intent.payment_failed":
-        await this.prismaService.payment.update({
-          where: {
-            id: payment.id,
-          },
-          data: {
-            status: EPaymentStatus.FAILED,
-          },
-        });
-      case "payment_intent.canceled":
-        await this.prismaService.payment.update({
-          where: {
-            id: payment.id,
-          },
-          data: {
-            status: EPaymentStatus.FAILED,
-          },
-        });
+  async handleStripeWebhookEvent(req: RawBodyRequest<Request>) {
+    const endpointSecret = this.configService.get("stripe").webhookSecret;
+    const sig = req.headers["stripe-signature"];
+    let event: Stripe.Event;
+    try {
+      event = this.stripe.webhooks.constructEvent(
+        req.rawBody,
+        sig,
+        endpointSecret,
+      );
+      const payment = await this.prismaService.payment.findFirst({
+        where: {
+          referenceCode: event.data.object["id"],
+          paymentMethod: EPaymentMethod.STRIPE,
+        },
+      });
+      if (!payment) return;
+      switch (event.type) {
+        case "payment_intent.succeeded":
+          const paymentIntentSucceeded = event.data.object;
+          Logger.log(paymentIntentSucceeded, "payment_intent.succeeded");
+          await this.prismaService.payment.update({
+            where: {
+              id: payment.id,
+            },
+            data: {
+              status: EPaymentStatus.SUCCESS,
+            },
+          });
+          break;
+        case "payment_intent.payment_failed":
+          await this.prismaService.payment.update({
+            where: {
+              id: payment.id,
+            },
+            data: {
+              status: EPaymentStatus.FAILED,
+            },
+          });
+        case "payment_intent.canceled":
+          await this.prismaService.payment.update({
+            where: {
+              id: payment.id,
+            },
+            data: {
+              status: EPaymentStatus.FAILED,
+            },
+          });
 
-      default:
-        break;
+        default:
+          break;
+      }
+    } catch (err) {
+      throw new BadRequestException(`Webhook Error: ${err.message}`);
     }
   }
 
