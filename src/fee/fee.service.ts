@@ -456,7 +456,7 @@ export class FeeService {
         schoolId: user.schoolId,
         paymentMethod: dto.method,
         description: dto.description,
-        phoneNumber: dto.phone,
+        phoneNumber: dto.phone.replace("+", ""),
         referenceCode: null,
         date: new Date(),
       },
@@ -471,6 +471,7 @@ export class FeeService {
         });
         return stripeResult.client_secret;
       case EPaymentMethod.MPESA:
+        dto.phone = dto.phone.replace("+", "");
         const mpesaResult = await this.paymentService.createMpesaPayment(
           dto.amount,
           dto.phone,
