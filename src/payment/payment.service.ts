@@ -418,8 +418,8 @@ export class PaymentService {
             : user.role === ERole.STUDENT
             ? { id: user.id }
             : { id, parentId: user.id },
-        // academicYearId: dto.academicYearId,
-        // academicTerm: dto.academicTerm,
+        academicYearId: dto.academicYearId,
+        academicTerm: dto.academicTerm,
       },
       include: {
         fee: true,

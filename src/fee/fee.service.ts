@@ -23,11 +23,7 @@ import {
   DownloadFeesByClassroomsDto,
   DownloadFeesByStudentsDto,
 } from "./dto/download-fees.dto";
-import {
-  FindFeesByStudentDto,
-  FindFeesDto,
-  FindPaymentsByStudentDto,
-} from "./dto/find-fees.dto";
+import { FindFeesByStudentDto, FindFeesDto } from "./dto/find-fees.dto";
 import { UpdateFeeDto } from "./dto/update-fee.dto";
 
 @Injectable()
