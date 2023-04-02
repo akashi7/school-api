@@ -10,11 +10,6 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
-import { Auth } from "../auth/decorators/auth.decorator";
-import { GetUser } from "../auth/decorators/get-user.decorator";
-import { FindFeesByStudentDto } from "../fee/dto/find-fees.dto";
-import { PayFeeDto, PayFeeWithThirdPartyDto } from "../fee/dto/pay-fee.dto";
-import { FeeService } from "../fee/fee.service";
 import {
   CreatedResponse,
   OkResponse,
@@ -24,6 +19,15 @@ import {
 } from "../__shared__/decorators";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { IPagination } from "../__shared__/interfaces/pagination.interface";
+import { Auth } from "../auth/decorators/auth.decorator";
+import { GetUser } from "../auth/decorators/get-user.decorator";
+import {
+  FindFeesByStudentDto,
+  FindPaymentsByStudentDto,
+} from "../fee/dto/find-fees.dto";
+import { PayFeeDto, PayFeeWithThirdPartyDto } from "../fee/dto/pay-fee.dto";
+import { FeeService } from "../fee/fee.service";
+import { PaymentService } from "../payment/payment.service";
 import { CreateExtraFeeDto } from "./dto/create-extra-fee.dto";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
@@ -32,15 +36,16 @@ import { UpdateStudentDto } from "./dto/update-student.dto";
 import { StudentService } from "./student.service";
 
 @Controller("students")
-@Auth(ERole.SCHOOL)
 @ApiTags("Students")
 export class StudentController {
   constructor(
     private readonly studentService: StudentService,
     private readonly feeService: FeeService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   @Post()
+  @Auth(ERole.SCHOOL)
   @CreatedResponse()
   async createStudent(@Body() dto: CreateStudentDto, @GetUser() user: User) {
     const payload = await this.studentService.create(dto, user);
@@ -48,6 +53,7 @@ export class StudentController {
   }
 
   @Get()
+  @Auth(ERole.SCHOOL)
   @Paginated()
   @PageResponse()
   async getStudents(
@@ -79,14 +85,31 @@ export class StudentController {
     return new GenericResponse("Student fees retrieved", payload);
   }
 
+  @Get(":id/payments")
+  @Auth(ERole.PARENT, ERole.SCHOOL, ERole.STUDENT)
+  @OkResponse()
+  async findPaymentsByStudent(
+    @Param("id") id: string,
+    @Query() dto: FindPaymentsByStudentDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.paymentService.findPaymentsByStudent(
+      id,
+      dto,
+      user,
+    );
+    return new GenericResponse("Student payments retrieved", payload);
+  }
+
   @Post(":studentId/fees/:feeId/pay")
+  @Auth(ERole.SCHOOL)
   async payFee(
     @Param("studentId") studentId: string,
     @Param("feeId") feeId: string,
     @Body() dto: PayFeeDto,
     @GetUser() user: User,
   ) {
-    const payload = await this.feeService.addFeePayment(
+    const payload = await this.paymentService.addFeePayment(
       studentId,
       feeId,
       dto,
@@ -95,14 +118,34 @@ export class StudentController {
     return new GenericResponse("Fee paid", payload);
   }
 
+  @Post(":studentId/pay")
+  @Auth(ERole.SCHOOL)
+  async payByStudent(
+    @Param("studentId") studentId: string,
+    @Body() dto: PayFeeDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.paymentService.addPayment(studentId, dto, user);
+    return new GenericResponse("Student payment initiated", payload);
+  }
+
+  /**
+   * Pay specific fee with third party
+   * @param studentId
+   * @param feeId
+   * @param dto
+   * @param user
+   * @returns
+   */
   @Post(":studentId/fees/:feeId/pay/third-party")
+  @Auth()
   async payFeeWithThirdParty(
     @Param("studentId") studentId: string,
     @Param("feeId") feeId: string,
     @Body() dto: PayFeeWithThirdPartyDto,
     @GetUser() user: User,
   ) {
-    const payload = await this.feeService.payFeeWithThirdParty(
+    const payload = await this.paymentService.payFeeWithThirdParty(
       studentId,
       feeId,
       dto,
@@ -111,7 +154,31 @@ export class StudentController {
     return new GenericResponse("Fee payment initiated", payload);
   }
 
+  /**
+   * Pay custom amount with third party
+   * @param studentId
+   * @param feeId
+   * @param dto
+   * @param user
+   * @returns
+   */
+  @Post(":studentId/pay/third-party")
+  @Auth()
+  async payWithThirdParty(
+    @Param("studentId") studentId: string,
+    @Body() dto: PayFeeWithThirdPartyDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.paymentService.addPaymentWithThirdParty(
+      studentId,
+      dto,
+      user,
+    );
+    return new GenericResponse("Payment initiated", payload);
+  }
+
   @Patch(":id")
+  @Auth(ERole.SCHOOL)
   @OkResponse()
   async update(
     @Param("id") id: string,
@@ -123,6 +190,7 @@ export class StudentController {
   }
 
   @Delete(":id")
+  @Auth(ERole.SCHOOL)
   @OkResponse()
   async remove(@Param("id") id: string, @GetUser() user: User) {
     const payload = await this.studentService.remove(id, user);
@@ -130,6 +198,7 @@ export class StudentController {
   }
 
   @Post("promotions")
+  @Auth(ERole.SCHOOL)
   @CreatedResponse()
   async createPromotion(
     @Body() dto: CreatePromotionDto,
@@ -140,6 +209,7 @@ export class StudentController {
   }
 
   @Post(":id/extra-fees")
+  @Auth(ERole.SCHOOL)
   @CreatedResponse()
   async createExtraFee(
     @Param("id") id: string,
@@ -151,6 +221,7 @@ export class StudentController {
   }
 
   @Delete(":studentId/extra-fees/:extraFeeId")
+  @Auth(ERole.SCHOOL)
   @OkResponse()
   async deleteExtraFee(
     @Param("studentId") studentId: string,
