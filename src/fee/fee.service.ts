@@ -5,7 +5,6 @@ import {
 } from "@nestjs/common";
 import {
   EAcademicTerm,
-  EPaymentMethod,
   ERole,
   Fee,
   Payment,
@@ -13,20 +12,23 @@ import {
   User,
 } from "@prisma/client";
 import { Workbook } from "exceljs";
+import { PaginationDto } from "../__shared__/dto/pagination.dto";
+import { paginate } from "../__shared__/utils/pagination.util";
 import { EPaymentStatus } from "../payment/enums";
 import { PaymentService } from "../payment/payment.service";
 import { PrismaService } from "../prisma.service";
-import { PaginationDto } from "../__shared__/dto/pagination.dto";
-import { paginate } from "../__shared__/utils/pagination.util";
+import { ViewStudentFeeDto } from "./dto/ViewStudentFee.dto";
 import { CreateFeeDto } from "./dto/create-fee.dto";
 import {
   DownloadFeesByClassroomsDto,
   DownloadFeesByStudentsDto,
 } from "./dto/download-fees.dto";
-import { FindFeesByStudentDto, FindFeesDto } from "./dto/find-fees.dto";
-import { PayFeeDto, PayFeeWithThirdPartyDto } from "./dto/pay-fee.dto";
+import {
+  FindFeesByStudentDto,
+  FindFeesDto,
+  FindPaymentsByStudentDto,
+} from "./dto/find-fees.dto";
 import { UpdateFeeDto } from "./dto/update-fee.dto";
-import { ViewStudentFeeDto } from "./dto/ViewStudentFee.dto";
 
 @Injectable()
 export class FeeService {
@@ -387,100 +389,5 @@ export class FeeService {
       workbook,
       filename: `FEES_CLEARANCE_REPORT_${stream.classroom.name}_${stream.name}`,
     };
-  }
-
-  async addFeePayment(
-    studentId: string,
-    feeId: string,
-    dto: PayFeeDto,
-    user: User,
-  ) {
-    const student = await this.prismaService.user.findFirst({
-      where: {
-        id: studentId,
-        role: ERole.STUDENT,
-        schoolId: user.schoolId,
-      },
-    });
-
-    if (!student) throw new NotFoundException("Student not found");
-    const fee = await this.prismaService.fee.findFirst({
-      where: { id: feeId, schoolId: user.schoolId },
-    });
-    if (!fee) throw new NotFoundException("Fee not found");
-    const transaction = await this.prismaService.payment.create({
-      data: {
-        amount: dto.amount,
-        feeId,
-        studentId,
-        schoolId: user.schoolId,
-        paymentMethod: dto.paymentMethod,
-        referenceCode: dto.referenceCode,
-        date: dto.date,
-        description: dto.description,
-        phoneNumber: dto.phoneNumber,
-      },
-    });
-    return transaction;
-  }
-
-  async payFeeWithThirdParty(
-    studentId: string,
-    feeId: string,
-    dto: PayFeeWithThirdPartyDto,
-    user: User,
-  ) {
-    const student =
-      user.role === ERole.SCHOOL
-        ? await this.prismaService.user.findFirst({
-            where: {
-              id: studentId,
-              role: ERole.STUDENT,
-              schoolId: user.schoolId,
-            },
-          })
-        : await this.prismaService.user.findFirst({
-            where: { id: user.id, role: ERole.STUDENT },
-          });
-
-    if (!student) throw new NotFoundException("Student not found");
-    const fee = await this.prismaService.fee.findFirst({
-      where: { id: feeId, schoolId: user.schoolId },
-    });
-    if (!fee) throw new NotFoundException("Fee not found");
-    const newPayment = await this.prismaService.payment.create({
-      data: {
-        amount: dto.amount,
-        feeId,
-        studentId,
-        schoolId: user.schoolId,
-        paymentMethod: dto.method,
-        description: dto.description,
-        phoneNumber: dto.phone.replace("+", ""),
-        referenceCode: null,
-        date: new Date(),
-      },
-    });
-    switch (dto.method) {
-      case EPaymentMethod.STRIPE:
-        const stripeResult =
-          await this.paymentService.createStripePaymentIntent(dto);
-        await this.prismaService.payment.update({
-          where: { id: newPayment.id },
-          data: { referenceCode: stripeResult.id },
-        });
-        return stripeResult.client_secret;
-      case EPaymentMethod.MPESA:
-        dto.phone = dto.phone.replace("+", "");
-        const mpesaResult = await this.paymentService.createMpesaPayment(
-          dto.amount,
-          dto.phone,
-        );
-        await this.prismaService.payment.update({
-          where: { id: newPayment.id },
-          data: { referenceCode: mpesaResult.CheckoutRequestID },
-        });
-        return mpesaResult.ResponseDescription;
-    }
   }
 }

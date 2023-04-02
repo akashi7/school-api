@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { EPaymentMethod } from "@prisma/client";
+import { EAcademicTerm, EPaymentMethod } from "@prisma/client";
 import {
   IsDateString,
   IsEnum,
@@ -28,21 +28,20 @@ export class PayFeeDto {
   phoneNumber?: string;
   @IsString()
   description: string;
+  @IsString()
+  academicYearId?: string;
+  @IsEnum(EAcademicTerm)
+  @ApiProperty({ enum: EAcademicTerm })
+  academicTerm?: EAcademicTerm;
 }
 
-export class PayFeeWithThirdPartyDto {
+export class PayFeeWithThirdPartyDto extends PayFeeDto {
   @IsEnum(EPaymentMethod)
   @ApiProperty({ enum: EPaymentMethod })
-  method: EPaymentMethod;
-  @IsNumber()
-  amount: number;
-  @IsString()
-  description: string;
+  paymentMethod: EPaymentMethod;
   @IsString()
   currency: string;
   @IsISO31661Alpha2()
   @ValidateIf((o) => o.method === EPaymentMethod.MPESA)
   country?: string;
-  @IsPhoneNumber()
-  phone: string;
 }

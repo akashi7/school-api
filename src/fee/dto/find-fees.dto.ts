@@ -16,6 +16,15 @@ export class FindFeesByStudentDto {
   status: EFeeStatus;
 }
 
+export class FindPaymentsByStudentDto {
+  @ApiProperty()
+  @IsString()
+  academicYearId: string;
+  @ApiProperty({ enum: EAcademicTerm })
+  @IsEnum(EAcademicTerm)
+  academicTerm: EAcademicTerm;
+}
+
 export class FindFeesDto {
   @OptionalProperty()
   search?: string;

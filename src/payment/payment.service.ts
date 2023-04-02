@@ -3,16 +3,18 @@ import {
   BadRequestException,
   Injectable,
   Logger,
+  NotFoundException,
   RawBodyRequest,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { EPaymentMethod } from "@prisma/client";
+import { EPaymentMethod, ERole, User } from "@prisma/client";
 import { Request } from "express";
-import { lastValueFrom } from "rxjs";
+import { catchError, lastValueFrom } from "rxjs";
 import Stripe from "stripe";
-import { PayFeeWithThirdPartyDto } from "../fee/dto/pay-fee.dto";
-import { PrismaService } from "../prisma.service";
 import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
+import { FindPaymentsByStudentDto } from "../fee/dto/find-fees.dto";
+import { PayFeeDto, PayFeeWithThirdPartyDto } from "../fee/dto/pay-fee.dto";
+import { PrismaService } from "../prisma.service";
 import { EPaymentStatus } from "./enums";
 import {
   IMpesaAuthResponse,
@@ -43,7 +45,6 @@ export class PaymentService {
       automatic_payment_methods: {
         enabled: true,
       },
-      //   payment_method: "card",
     });
     return paymentIntent;
   }
@@ -123,24 +124,28 @@ export class PaymentService {
       AccountReference: "Test Payment",
       TransactionDesc: "Testing M-PESA API integration with NestJS",
     };
-
     const token = await this.mpesaGenerateToken();
     // Send the request to the API
     const response = await lastValueFrom(
-      this.httpService.post<IMpesaCreatedPaymentResponse>(
-        `${
-          this.configService.get("mpesa").url
-        }/mpesa/stkpush/v1/processrequest`,
-        requestBody,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+      this.httpService
+        .post<IMpesaCreatedPaymentResponse>(
+          `${
+            this.configService.get("mpesa").url
+          }/mpesa/stkpush/v1/processrequest`,
+          requestBody,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           },
-        },
-      ),
+        )
+        .pipe(
+          catchError((err) => {
+            throw new BadRequestException(err.response.data);
+          }),
+        ),
     );
-
     return response.data;
   }
 
@@ -204,5 +209,222 @@ export class PaymentService {
       )
     ).data;
     return auth.access_token;
+  }
+
+  async addFeePayment(
+    studentId: string,
+    feeId: string,
+    dto: PayFeeDto,
+    user: User,
+  ) {
+    const student = await this.prismaService.user.findFirst({
+      where: {
+        id: studentId,
+        role: ERole.STUDENT,
+        schoolId: user.schoolId,
+      },
+    });
+
+    if (!student) throw new NotFoundException("Student not found");
+    const fee = await this.prismaService.fee.findFirst({
+      where: { id: feeId, schoolId: user.schoolId },
+    });
+    if (!fee) throw new NotFoundException("Fee not found");
+    const academicYear = await this.prismaService.academicYear.findFirst({
+      where: { id: dto.academicYearId },
+    });
+    if (!academicYear) throw new NotFoundException("Academic year not found");
+    const transaction = await this.prismaService.payment.create({
+      data: {
+        amount: dto.amount,
+        feeId,
+        studentId,
+        schoolId: user.schoolId,
+        paymentMethod: dto.paymentMethod,
+        referenceCode: dto.referenceCode,
+        date: dto.date,
+        description: dto.description,
+        phoneNumber: dto.phoneNumber,
+        academicYearId: dto.academicYearId,
+        academicTerm: dto.academicTerm,
+      },
+    });
+    return transaction;
+  }
+
+  async addPayment(studentId: string, dto: PayFeeDto, user: User) {
+    const student = await this.prismaService.user.findFirst({
+      where: {
+        id: studentId,
+        role: ERole.STUDENT,
+        schoolId: user.schoolId,
+      },
+    });
+
+    if (!student) throw new NotFoundException("Student not found");
+    const academicYear = await this.prismaService.academicYear.findFirst({
+      where: { id: dto.academicYearId },
+    });
+    if (!academicYear) throw new NotFoundException("Academic year not found");
+    const transaction = await this.prismaService.payment.create({
+      data: {
+        amount: dto.amount,
+        studentId,
+        schoolId: user.schoolId,
+        paymentMethod: dto.paymentMethod,
+        referenceCode: dto.referenceCode,
+        date: dto.date,
+        description: dto.description,
+        phoneNumber: dto.phoneNumber,
+        academicYearId: dto.academicYearId,
+        academicTerm: dto.academicTerm,
+      },
+    });
+    return transaction;
+  }
+
+  async payFeeWithThirdParty(
+    studentId: string,
+    feeId: string,
+    dto: PayFeeWithThirdPartyDto,
+    user: User,
+  ) {
+    const student =
+      user.role === ERole.SCHOOL
+        ? await this.prismaService.user.findFirst({
+            where: {
+              id: studentId,
+              role: ERole.STUDENT,
+              schoolId: user.schoolId,
+            },
+          })
+        : await this.prismaService.user.findFirst({
+            where: { id: user.id, role: ERole.STUDENT },
+          });
+
+    if (!student) throw new NotFoundException("Student not found");
+    const fee = await this.prismaService.fee.findFirst({
+      where: { id: feeId, schoolId: user.schoolId },
+    });
+    if (!fee) throw new NotFoundException("Fee not found");
+    const academicYear = await this.prismaService.academicYear.findFirst({
+      where: { id: dto.academicYearId },
+    });
+    if (!academicYear) throw new NotFoundException("Academic year not found");
+    const newPayment = await this.prismaService.payment.create({
+      data: {
+        amount: dto.amount,
+        feeId,
+        studentId,
+        schoolId: user.schoolId,
+        paymentMethod: dto.paymentMethod,
+        description: dto.description,
+        phoneNumber: dto.phoneNumber.replace("+", ""),
+        academicYearId: dto.academicYearId,
+        academicTerm: dto.academicTerm,
+        date: new Date(),
+      },
+    });
+    switch (dto.paymentMethod) {
+      case EPaymentMethod.STRIPE:
+        const stripeResult = await this.createStripePaymentIntent(dto);
+        await this.prismaService.payment.update({
+          where: { id: newPayment.id },
+          data: { referenceCode: stripeResult.id },
+        });
+        return stripeResult.client_secret;
+      case EPaymentMethod.MPESA:
+        dto.phoneNumber = dto.phoneNumber.replace("+", "");
+        const mpesaResult = await this.createMpesaPayment(
+          dto.amount,
+          dto.phoneNumber,
+        );
+        await this.prismaService.payment.update({
+          where: { id: newPayment.id },
+          data: { referenceCode: mpesaResult.CheckoutRequestID },
+        });
+        return mpesaResult.ResponseDescription;
+    }
+  }
+
+  async addPaymentWithThirdParty(
+    studentId: string,
+    dto: PayFeeWithThirdPartyDto,
+    user: User,
+  ) {
+    const student =
+      user.role === ERole.SCHOOL
+        ? await this.prismaService.user.findFirst({
+            where: {
+              id: studentId,
+              role: ERole.STUDENT,
+              schoolId: user.schoolId,
+            },
+          })
+        : await this.prismaService.user.findFirst({
+            where: { id: user.id, role: ERole.STUDENT },
+          });
+
+    if (!student) throw new NotFoundException("Student not found");
+    const academicYear = await this.prismaService.academicYear.findFirst({
+      where: { id: dto.academicYearId },
+    });
+    if (!academicYear) throw new NotFoundException("Academic year not found");
+    const newPayment = await this.prismaService.payment.create({
+      data: {
+        amount: dto.amount,
+        studentId: studentId,
+        schoolId: user.schoolId,
+        paymentMethod: dto.paymentMethod,
+        description: dto.description,
+        phoneNumber: dto.phoneNumber.replace("+", ""),
+        academicYearId: dto.academicYearId,
+        academicTerm: dto.academicTerm,
+        date: new Date(),
+      },
+    });
+    switch (dto.paymentMethod) {
+      case EPaymentMethod.STRIPE:
+        const stripeResult = await this.createStripePaymentIntent(dto);
+        await this.prismaService.payment.update({
+          where: { id: newPayment.id },
+          data: { referenceCode: stripeResult.id },
+        });
+        return stripeResult.client_secret;
+      case EPaymentMethod.MPESA:
+        dto.phoneNumber = dto.phoneNumber.replace("+", "");
+        const mpesaResult = await this.createMpesaPayment(
+          dto.amount,
+          dto.phoneNumber,
+        );
+        await this.prismaService.payment.update({
+          where: { id: newPayment.id },
+          data: { referenceCode: mpesaResult.CheckoutRequestID },
+        });
+        return mpesaResult.ResponseDescription;
+    }
+  }
+
+  async findPaymentsByStudent(
+    id: string,
+    dto: FindPaymentsByStudentDto,
+    user: User,
+  ) {
+    const payments = await this.prismaService.payment.findMany({
+      where: {
+        student:
+          user.role === ERole.SCHOOL
+            ? { id, schoolId: user.schoolId }
+            : user.role === ERole.STUDENT
+            ? { id: user.id }
+            : { id, parentId: user.id },
+        // academicYearId: dto.academicYearId,
+        // academicTerm: dto.academicTerm,
+      },
+      include: {
+        fee: true,
+      },
+    });
+    return payments;
   }
 }
