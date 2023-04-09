@@ -85,6 +85,13 @@ export class StudentService {
             orderBy: { createdAt: "desc" },
           },
           parent: { select: { id: true, phone: true } },
+          stream: {
+            select: {
+              id: true,
+              name: true,
+              classroom: { select: { id: true, name: true } },
+            },
+          },
         },
       },
       +page,
