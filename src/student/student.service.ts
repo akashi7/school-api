@@ -5,10 +5,10 @@ import {
 } from "@nestjs/common";
 import { ERole, Prisma, User } from "@prisma/client";
 import { endOfMonth, getMonth, startOfMonth } from "date-fns";
-import { ClassroomService } from "../classroom/classroom.service";
-import { PrismaService } from "../prisma.service";
 import { IPagination } from "../__shared__/interfaces/pagination.interface";
 import { paginate } from "../__shared__/utils/pagination.util";
+import { ClassroomService } from "../classroom/classroom.service";
+import { PrismaService } from "../prisma.service";
 import { CreateExtraFeeDto } from "./dto/create-extra-fee.dto";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
@@ -36,7 +36,12 @@ export class StudentService {
   ) {
     const whereConditions: Prisma.UserWhereInput = {};
     const studentPromotionWhereInput: Prisma.StudentPromotionWhereInput = {};
-    if (dto.academicYearId) whereConditions.academicYearId = dto.academicYearId;
+    if (dto.academicYearId)
+      whereConditions.studentPromotions = {
+        some: {
+          academicYearId: dto.academicYearId,
+        },
+      };
     if (dto.classroomId)
       whereConditions.stream = {
         classroomId: dto.classroomId,
