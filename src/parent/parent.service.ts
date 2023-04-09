@@ -5,6 +5,7 @@ import {
 } from "@nestjs/common";
 import { ERole } from "@prisma/client";
 import { PrismaService } from "../prisma.service";
+import { studentFields } from "../student/dto/student-fields";
 import { CreateParentDto } from "./dto/create-parent.dto";
 
 @Injectable()
@@ -79,17 +80,17 @@ export class ParentService {
         id,
         role: ERole.PARENT,
       },
-      include: {
-        children: {
-          include: {
-            stream: { include: { classroom: true } },
-            school: true,
-            academicYear: true,
-          },
-        },
-      },
     });
     if (!user) throw new NotFoundException("Parent not found");
-    return user.children;
+    const children = await this.prismaService.user.findMany({
+      where: {
+        role: ERole.STUDENT,
+        parentId: user.id,
+      },
+      select: {
+        ...studentFields,
+      },
+    });
+    return children;
   }
 }

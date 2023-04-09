@@ -41,6 +41,7 @@ export class FeeService {
    */
   async create(dto: CreateFeeDto, user: User) {
     return await this.prismaService.$transaction(async (tx) => {
+      // TODO: check if fee with the same academic year, classes and terms already exists
       if (
         !(await tx.academicYear.count({
           where: { id: dto.academicYearId },
@@ -178,6 +179,7 @@ export class FeeService {
         },
       },
     });
+    // TODO: Change this logic to get results for remaining fees
     const resultFees = [];
     for (const fee of fees) {
       const feeDto = new ViewStudentFeeDto();

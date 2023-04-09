@@ -1,4 +1,6 @@
-export const studentFields = {
+import { Prisma } from "@prisma/client";
+
+export const studentFields: Prisma.UserSelect = {
   id: true,
   studentIdentifier: true,
   fullName: true,
