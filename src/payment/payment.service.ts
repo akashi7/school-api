@@ -217,13 +217,22 @@ export class PaymentService {
     dto: PayFeeDto,
     user: User,
   ) {
-    const student = await this.prismaService.user.findFirst({
-      where: {
-        id: studentId,
-        role: ERole.STUDENT,
-        schoolId: user.schoolId,
-      },
-    });
+    const student =
+      user.role === ERole.SCHOOL
+        ? await this.prismaService.user.findFirst({
+            where: {
+              id: studentId,
+              role: ERole.STUDENT,
+              schoolId: user.schoolId,
+            },
+          })
+        : user.role === ERole.PARENT
+        ? await this.prismaService.user.findFirst({
+            where: { id: studentId, parentId: user.id, role: ERole.STUDENT },
+          })
+        : await this.prismaService.user.findFirst({
+            where: { id: user.id, role: ERole.STUDENT },
+          });
 
     if (!student) throw new NotFoundException("Student not found");
     const fee = await this.prismaService.fee.findFirst({
@@ -253,13 +262,22 @@ export class PaymentService {
   }
 
   async addPayment(studentId: string, dto: PayFeeDto, user: User) {
-    const student = await this.prismaService.user.findFirst({
-      where: {
-        id: studentId,
-        role: ERole.STUDENT,
-        schoolId: user.schoolId,
-      },
-    });
+    const student =
+      user.role === ERole.SCHOOL
+        ? await this.prismaService.user.findFirst({
+            where: {
+              id: studentId,
+              role: ERole.STUDENT,
+              schoolId: user.schoolId,
+            },
+          })
+        : user.role === ERole.PARENT
+        ? await this.prismaService.user.findFirst({
+            where: { id: studentId, parentId: user.id, role: ERole.STUDENT },
+          })
+        : await this.prismaService.user.findFirst({
+            where: { id: user.id, role: ERole.STUDENT },
+          });
 
     if (!student) throw new NotFoundException("Student not found");
     const academicYear = await this.prismaService.academicYear.findFirst({
@@ -297,6 +315,10 @@ export class PaymentService {
               role: ERole.STUDENT,
               schoolId: user.schoolId,
             },
+          })
+        : user.role === ERole.PARENT
+        ? await this.prismaService.user.findFirst({
+            where: { id: studentId, parentId: user.id, role: ERole.STUDENT },
           })
         : await this.prismaService.user.findFirst({
             where: { id: user.id, role: ERole.STUDENT },
@@ -360,6 +382,10 @@ export class PaymentService {
               role: ERole.STUDENT,
               schoolId: user.schoolId,
             },
+          })
+        : user.role === ERole.PARENT
+        ? await this.prismaService.user.findFirst({
+            where: { id: studentId, parentId: user.id, role: ERole.STUDENT },
           })
         : await this.prismaService.user.findFirst({
             where: { id: user.id, role: ERole.STUDENT },
