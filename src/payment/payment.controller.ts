@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -12,6 +13,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { Request } from "express";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
+import { SpennCallbackUrlBody } from "./interfaces/mpesa.interface";
 import { PaymentService } from "./payment.service";
 
 @Controller("payments")
@@ -40,6 +42,13 @@ export class PaymentController {
   @HttpCode(HttpStatus.OK)
   async mpesaCallbackHandler(@Req() req: Request) {
     await this.paymentService.handleMpesaCallback(req.body);
+    return;
+  }
+
+  @Post("spenn/callback")
+  @HttpCode(HttpStatus.OK)
+  async spennCallbackHandler(@Body() body: SpennCallbackUrlBody) {
+    await this.paymentService.handleSpennCallbackUrl(body);
     return;
   }
 }

@@ -7,6 +7,7 @@ export interface IAppConfig {
   swaggerEnabled?: boolean;
   stripe?: IStripeConfig;
   mpesa?: IMpesaConfig;
+  spenn?: SpennConfig;
 }
 
 interface JwtConfig {
@@ -26,5 +27,12 @@ interface IMpesaConfig {
   consumerSecret: string;
   shortCode: string;
   passKey: string;
+  callbackUrl: string;
+}
+
+interface SpennConfig {
+  url: string;
+  apiKey: string;
+  tokenurl: string;
   callbackUrl: string;
 }

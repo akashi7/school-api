@@ -11,6 +11,7 @@ import { EPaymentMethod, ERole, User } from "@prisma/client";
 import { Request } from "express";
 import { catchError, lastValueFrom } from "rxjs";
 import Stripe from "stripe";
+import { v4 as uuidv4 } from "uuid";
 import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
 import { FindPaymentsByStudentDto } from "../fee/dto/find-fees.dto";
 import { PayFeeDto, PayFeeWithThirdPartyDto } from "../fee/dto/pay-fee.dto";
@@ -20,7 +21,11 @@ import {
   IMpesaAuthResponse,
   IMpesaCreatedPaymentResponse,
   IMpesaStatusResponse,
+  SpennAuthResponse,
+  SpennCallbackUrlBody,
+  SpennStatusResponse,
 } from "./interfaces/mpesa.interface";
+const https = require("https");
 
 @Injectable()
 export class PaymentService {
@@ -33,6 +38,13 @@ export class PaymentService {
     this.stripe = new Stripe(this.configService.get("stripe").secretKey, {
       apiVersion: "2022-11-15",
     });
+  }
+
+  ReturnAgent() {
+    const agent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+    return agent;
   }
 
   async createStripePaymentIntent(
@@ -211,6 +223,96 @@ export class PaymentService {
     return auth.access_token;
   }
 
+  async spennGenerateToken(agent: any) {
+    const body = {
+      grant_type: "api_key",
+      api_key: this.configService.get("spenn").apiKey,
+      client_id: "SpennBusinessApiKey",
+      audience: "SpennBusiness",
+      client_secret: 1234,
+    };
+    const auth = (
+      await lastValueFrom(
+        this.httpService.post<SpennAuthResponse>(
+          `${this.configService.get("spenn").tokenurl}`,
+          body,
+          {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            httpsAgent: agent,
+          },
+        ),
+      )
+    ).data;
+    return auth.access_token;
+  }
+
+  async createSpennPayment(phoneNumber: string, amount: number) {
+    const agent = this.ReturnAgent();
+    const token = await this.spennGenerateToken(agent);
+    const body = {
+      phoneNumber,
+      amount,
+      message: "Please send some money",
+      callbackUrl: this.configService.get("spenn").callbackUrl,
+      externalReference: uuidv4(),
+    };
+    const response = await lastValueFrom(
+      this.httpService
+        .post<SpennStatusResponse>(
+          `${this.configService.get("spenn").url}/transaction/request`,
+          body,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            httpsAgent: agent,
+          },
+        )
+        .pipe(
+          catchError((err) => {
+            throw new BadRequestException(err.response.data);
+          }),
+        ),
+    );
+    console.log({ token }, { response });
+    return response.data;
+  }
+
+  async handleSpennCallbackUrl(body: SpennCallbackUrlBody) {
+    switch (body.RequestStatus) {
+      case 2:
+        await this.prismaService.payment.updateMany({
+          where: {
+            referenceCode: body.ExternalReference,
+          },
+          data: {
+            status: EPaymentStatus.SUCCESS,
+          },
+        });
+      case 3:
+        await this.prismaService.payment.updateMany({
+          where: {
+            referenceCode: body.ExternalReference,
+          },
+          data: {
+            status: EPaymentStatus.FAILED,
+          },
+        });
+      case 4:
+        await this.prismaService.payment.updateMany({
+          where: {
+            referenceCode: body.ExternalReference,
+          },
+          data: {
+            status: EPaymentStatus.FAILED,
+          },
+        });
+    }
+  }
+
   async addFeePayment(
     studentId: string,
     feeId: string,
@@ -366,6 +468,15 @@ export class PaymentService {
           data: { referenceCode: mpesaResult.CheckoutRequestID },
         });
         return mpesaResult.ResponseDescription;
+      case EPaymentMethod.SPENN:
+        const spennResult = await this.createSpennPayment(
+          dto.phoneNumber,
+          dto.amount,
+        );
+        await this.prismaService.payment.update({
+          where: { id: newPayment.id },
+          data: { referenceCode: spennResult.externalReference },
+        });
     }
   }
 
@@ -428,6 +539,15 @@ export class PaymentService {
           data: { referenceCode: mpesaResult.CheckoutRequestID },
         });
         return mpesaResult.ResponseDescription;
+      case EPaymentMethod.SPENN:
+        const spennResult = await this.createSpennPayment(
+          dto.phoneNumber,
+          dto.amount,
+        );
+        await this.prismaService.payment.update({
+          where: { id: newPayment.id },
+          data: { referenceCode: spennResult.externalReference },
+        });
     }
   }
 

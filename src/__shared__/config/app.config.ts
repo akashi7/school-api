@@ -34,6 +34,12 @@ export function appConfig(): IAppConfig {
       publicKey: process.env.STRIPE_PUBLIC_KEY,
       webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     },
+    spenn: {
+      tokenurl: process.env.SPENN_TOKEN_URL,
+      apiKey: process.env.SPENN_API_KEY,
+      url: process.env.SPENN_URL,
+      callbackUrl: process.env.SPENN_CALLBACK_URL,
+    },
   };
 }
 

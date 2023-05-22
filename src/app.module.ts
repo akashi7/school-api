@@ -6,6 +6,9 @@ import {
 } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
+import { appConfig } from "./__shared__/config/app.config";
+import { GlobalExceptionFilter } from "./__shared__/filters/global-exception.filter";
+import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
 import { AcademicYearModule } from "./academic-year/academic-year.module";
 import { AppService } from "./app.service";
 import { AuthModule } from "./auth/auth.module";
@@ -17,9 +20,6 @@ import { PrismaModule } from "./prisma.module";
 import { PrismaService } from "./prisma.service";
 import { SchoolModule } from "./school/school.module";
 import { StudentModule } from "./student/student.module";
-import { appConfig } from "./__shared__/config/app.config";
-import { GlobalExceptionFilter } from "./__shared__/filters/global-exception.filter";
-import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
 
 @Module({
   imports: [
