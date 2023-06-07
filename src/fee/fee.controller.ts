@@ -27,7 +27,7 @@ import { UpdateFeeDto } from "./dto/update-fee.dto";
 import { FeeService } from "./fee.service";
 
 @Controller("fees")
-@Auth(ERole.SCHOOL)
+@Auth(ERole.SCHOOL, ERole.PARENT)
 @ApiTags("Fees")
 export class FeeController {
   constructor(private readonly feeService: FeeService) {}

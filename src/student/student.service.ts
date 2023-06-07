@@ -117,6 +117,7 @@ export class StudentService {
             phone: dto.parentPhoneNumber,
             role: ERole.PARENT,
             fullName: `${dto.fullName}'s Parent`,
+            countryName: dto.countryName,
           },
         });
       }
@@ -178,7 +179,7 @@ export class StudentService {
           ? {
               id,
               role: ERole.STUDENT,
-              parent: { id: user.id },
+              parentId: user.id,
             }
           : {
               id: user.id,

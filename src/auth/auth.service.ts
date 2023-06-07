@@ -44,6 +44,7 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.generateTokens({
       id: user.id,
       role: user.role,
+      countryName: user.countryName,
     });
     await this.prismaService.user.update({
       where: { id: user.id },
@@ -75,6 +76,7 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.generateTokens({
       id: user.id,
       role: user.role,
+      countryName: user.countryName,
     });
     await this.prismaService.user.update({
       where: { id: user.id },
@@ -114,6 +116,7 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.generateTokens({
       id: user.id,
       role: user.role,
+      countryName: user.countryName,
     });
     await this.prismaService.user.update({
       where: { id: user.id },
@@ -146,6 +149,7 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.generateTokens({
       id: user.id,
       role: user.role,
+      countryName: user.countryName,
     });
     await this.prismaService.user.update({
       where: { id: user.id },
@@ -210,10 +214,11 @@ export class AuthService {
    * @param param0 Jwt payload
    * @returns tokens
    */
-  private async generateTokens({ id, role }: JwtPayload) {
+  private async generateTokens({ id, role, countryName }: JwtPayload) {
     const accessToken = await this.jwtService.signAsync({
       id,
       role,
+      countryName,
     });
     const refreshToken = await this.jwtService.signAsync({
       id,

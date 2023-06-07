@@ -158,11 +158,21 @@ export class FeeService {
           student: { select: { stream: { select: { classroomId: true } } } },
         },
       });
+    const school = await this.prismaService.user.findFirst({
+      where: {
+        id,
+      },
+    });
     if (!studentPromotion)
       throw new NotFoundException("Student promotion not found");
     const fees = await this.prismaService.fee.findMany({
       where: {
-        schoolId: user.schoolId,
+        schoolId:
+          user.role === ERole.PARENT
+            ? school.schoolId
+            : user.role === ERole.STUDENT
+            ? user.schoolId
+            : user.id,
         classroomIDs: {
           has: studentPromotion.student.stream.classroomId,
         },
@@ -220,6 +230,21 @@ export class FeeService {
    * @returns fee
    */
   async update(id: string, dto: UpdateFeeDto, user: User) {
+    const classroomIDs = dto.classroomIDs;
+
+    const checkIfClassroomsExist = async () => {
+      const classroomCount = await this.prismaService.classroom.count({
+        where: {
+          id: { in: classroomIDs },
+          schoolId: user.schoolId,
+        },
+      });
+
+      return classroomCount === classroomIDs.length;
+    };
+
+    const areClassroomsExisting = await checkIfClassroomsExist();
+
     await this.findOne(id, user);
     if (dto.academicYearId) {
       if (
@@ -229,15 +254,10 @@ export class FeeService {
       )
         throw new NotFoundException("Academic year not found");
     }
-    if (
-      dto.classroomIDs?.some(async (id) => {
-        const count = await this.prismaService.classroom.count({
-          where: { id, schoolId: user.schoolId },
-        });
-        return !count;
-      })
-    )
+    if (!areClassroomsExisting) {
       throw new BadRequestException("One of the classrooms does not exist");
+    }
+
     await this.prismaService.fee.update({
       where: {
         id,

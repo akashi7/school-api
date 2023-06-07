@@ -277,7 +277,6 @@ export class PaymentService {
           }),
         ),
     );
-    console.log({ token }, { response });
     return response.data;
   }
 
