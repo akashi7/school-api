@@ -23,6 +23,7 @@ import {
   IMpesaStatusResponse,
   SpennAuthResponse,
   SpennCallbackUrlBody,
+  SpennResultObject,
   SpennStatusResponse,
 } from "./interfaces/mpesa.interface";
 const https = require("https");
@@ -476,6 +477,7 @@ export class PaymentService {
           where: { id: newPayment.id },
           data: { referenceCode: spennResult.externalReference },
         });
+        return spennResult;
     }
   }
 
@@ -547,6 +549,7 @@ export class PaymentService {
           where: { id: newPayment.id },
           data: { referenceCode: spennResult.externalReference },
         });
+        return spennResult;
     }
   }
 

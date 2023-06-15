@@ -1,9 +1,9 @@
 import { Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
+import { configure } from "./__shared__/config/app.config";
 import { AppModule } from "./app.module";
 import { PrismaService } from "./prisma.service";
-import { configure } from "./__shared__/config/app.config";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

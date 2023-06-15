@@ -51,3 +51,15 @@ export interface SpennPaymentRequest {
   callbackUrl: string;
   externalReference: string;
 }
+
+export interface SpennResultObject {
+  $id: string;
+  requestGuid: string;
+  requestStatus: string;
+  timestampCreated: string;
+  phoneNumber: string;
+  message: string;
+  amount: number;
+  externalReference: string;
+  transactionStatus: string;
+}

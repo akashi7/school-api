@@ -113,7 +113,8 @@ export function configure(app: INestApplication): void {
   app.use(helmet());
   app.use(cookieParser());
   app.setGlobalPrefix("api/v1");
-  app.enableCors(corsConfig());
+  app.enableCors();
+  // corsConfig()
   configureSwagger(app);
   const configService = app.get(ConfigService<IAppConfig>);
   if (configService.get("swaggerEnabled")) {
