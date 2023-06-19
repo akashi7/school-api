@@ -63,3 +63,9 @@ export interface SpennResultObject {
   externalReference: string;
   transactionStatus: string;
 }
+
+export interface MtnTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}

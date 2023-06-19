@@ -19,6 +19,7 @@ enum EPaymentMethod {
   STRIPE
   MPESA
   SPENN
+  MTN
   OTHER
 }
 

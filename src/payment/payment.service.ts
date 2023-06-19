@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { EPaymentMethod, ERole, User } from "@prisma/client";
+import { Buffer } from "buffer";
 import { Request } from "express";
 import { catchError, lastValueFrom } from "rxjs";
 import Stripe from "stripe";
@@ -21,11 +22,12 @@ import {
   IMpesaAuthResponse,
   IMpesaCreatedPaymentResponse,
   IMpesaStatusResponse,
+  MtnTokenResponse,
   SpennAuthResponse,
   SpennCallbackUrlBody,
-  SpennResultObject,
   SpennStatusResponse,
 } from "./interfaces/mpesa.interface";
+
 const https = require("https");
 
 @Injectable()
@@ -292,6 +294,7 @@ export class PaymentService {
             status: EPaymentStatus.SUCCESS,
           },
         });
+        break;
       case 3:
         await this.prismaService.payment.updateMany({
           where: {
@@ -301,6 +304,7 @@ export class PaymentService {
             status: EPaymentStatus.FAILED,
           },
         });
+        break;
       case 4:
         await this.prismaService.payment.updateMany({
           where: {
@@ -310,7 +314,80 @@ export class PaymentService {
             status: EPaymentStatus.FAILED,
           },
         });
+        break;
+      default:
+        break;
     }
+  }
+
+  async generateMtnMomoToken() {
+    const keys = `${this.configService.get("mtn").apiUser}:${
+      this.configService.get("mtn").apiKey
+    }`;
+    const basicEncode = Buffer.from(keys).toString("base64");
+    const response = await lastValueFrom(
+      this.httpService
+        .post<MtnTokenResponse>(
+          `${this.configService.get("mtn").url}/collection/token/`,
+          "",
+          {
+            headers: {
+              Authorization: `Basic ${basicEncode}`,
+              "Ocp-Apim-Subscription-Key": `${
+                this.configService.get("mtn").subscriptionKey
+              }`,
+            },
+          },
+        )
+        .pipe(
+          catchError((err) => {
+            throw new BadRequestException(err.response.data);
+          }),
+        ),
+    );
+    return response.data;
+  }
+
+  async createMtnMomopayment(amount: number, phoneNumber: string) {
+    const token = (await this.generateMtnMomoToken()).access_token;
+    const externalId = uuidv4();
+    const body = {
+      amount: amount.toString(),
+      currency: "RWF",
+      externalId: externalId,
+      payer: {
+        partyIdType: "MSISDN",
+        partyId: phoneNumber,
+      },
+      payerMessage: "Pay me",
+      payeeNote: "waiting",
+    };
+
+    const referenceId = uuidv4();
+    const response = await lastValueFrom(
+      this.httpService
+        .post<any>(
+          `${this.configService.get("mtn").url}/collection/v1_0/requesttopay`,
+          body,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              "Ocp-Apim-Subscription-Key": `${
+                this.configService.get("mtn").subscriptionKey
+              }`,
+              "X-Reference-Id": `${referenceId}`,
+              "X-Target-Environment": "mtnrwanda",
+            },
+          },
+        )
+        .pipe(
+          catchError((err) => {
+            throw new BadRequestException(err.response.data);
+          }),
+        ),
+    );
+    return { response: response.data, referenceId };
   }
 
   async addFeePayment(
@@ -478,6 +555,17 @@ export class PaymentService {
           data: { referenceCode: spennResult.externalReference },
         });
         return spennResult;
+      case EPaymentMethod.MTN:
+        dto.phoneNumber = dto.phoneNumber.replace("+", "");
+        const mtnResult = await this.createMtnMomopayment(
+          dto.amount,
+          dto.phoneNumber,
+        );
+        await this.prismaService.payment.update({
+          where: { id: newPayment.id },
+          data: { referenceCode: mtnResult.referenceId },
+        });
+        return mtnResult.response;
     }
   }
 
@@ -550,6 +638,17 @@ export class PaymentService {
           data: { referenceCode: spennResult.externalReference },
         });
         return spennResult;
+      case EPaymentMethod.MTN:
+        dto.phoneNumber = dto.phoneNumber.replace("+", "");
+        const mtnResult = await this.createMtnMomopayment(
+          dto.amount,
+          dto.phoneNumber,
+        );
+        await this.prismaService.payment.update({
+          where: { id: newPayment.id },
+          data: { referenceCode: mtnResult.referenceId },
+        });
+        return mtnResult.response;
     }
   }
 

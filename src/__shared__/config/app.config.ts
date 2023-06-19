@@ -40,6 +40,12 @@ export function appConfig(): IAppConfig {
       url: process.env.SPENN_URL,
       callbackUrl: process.env.SPENN_CALLBACK_URL,
     },
+    mtn: {
+      url: process.env.MOMO_API_URL,
+      apiKey: process.env.MOMO_API_KEY,
+      apiUser: process.env.MOMO_API_USER,
+      subscriptionKey: process.env.MOMO_API_SUBSCRIPTION_KEY,
+    },
   };
 }
 

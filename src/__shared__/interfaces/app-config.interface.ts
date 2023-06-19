@@ -8,6 +8,7 @@ export interface IAppConfig {
   stripe?: IStripeConfig;
   mpesa?: IMpesaConfig;
   spenn?: SpennConfig;
+  mtn?: MtnConfig;
 }
 
 interface JwtConfig {
@@ -35,4 +36,11 @@ interface SpennConfig {
   apiKey: string;
   tokenurl: string;
   callbackUrl: string;
+}
+
+interface MtnConfig {
+  url: string;
+  apiKey: string;
+  apiUser: string;
+  subscriptionKey: string;
 }
