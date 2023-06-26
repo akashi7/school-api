@@ -21,6 +21,8 @@ export class CreateSchoolDto {
   schoolType: ESchoolType;
   @IsBoolean()
   hasStudentIds: boolean;
+  @IsBoolean()
+  hasEmployeeIds: boolean;
   @IsString()
   username: string;
   @IsString()

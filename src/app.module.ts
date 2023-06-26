@@ -13,6 +13,8 @@ import { AcademicYearModule } from "./academic-year/academic-year.module";
 import { AppService } from "./app.service";
 import { AuthModule } from "./auth/auth.module";
 import { ClassroomModule } from "./classroom/classroom.module";
+import { DeductibleModule } from "./deductible/deductible.module";
+import { EmployeeModule } from "./employee/employee.module";
 import { FeeModule } from "./fee/fee.module";
 import { ParentModule } from "./parent/parent.module";
 import { PaymentModule } from "./payment/payment.module";
@@ -36,6 +38,8 @@ import { StudentModule } from "./student/student.module";
     FeeModule,
     AcademicYearModule,
     PaymentModule,
+    EmployeeModule,
+    DeductibleModule,
   ],
   providers: [
     AppService,

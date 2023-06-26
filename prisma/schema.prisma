@@ -13,6 +13,7 @@ enum ERole {
   STUDENT
   PARENT
   SCHOOL
+  EMPLOYEE
 }
 
 enum EPaymentMethod {
@@ -47,6 +48,23 @@ enum ESchoolType {
 enum EFeeType {
   SCHOOL_FEE
   ADDITIONAL_FEE
+}
+
+enum EDeductibleType {
+  RAMA
+  PENSION
+  ADDITIONALS
+}
+
+enum EpostionsType {
+  TEACHER
+  DEAN_OF_STUDIES
+}
+
+enum EenumurationType {
+  SALARY
+  WAGES
+  COMMISSION
 }
 
 model User {
@@ -95,26 +113,43 @@ model User {
   // PARENT
   phone    String? @unique
   children User[]  @relation("ParentChildren")
+
+  //EMPLOYEE
+
+  employeeIdentifier    String?
+  employeeFullName      String?
+  employeePassportPhoto String?
+  employeeDob           DateTime?
+  employeeGender        EGender?
+  employeeCountryName   String?
+  employeeCountryCode   String?
+  employeeContactPhone  String?
+  employeeEmail         String?          @unique
+  AccountNumber         Int?
+  position              EpostionsType?
+  employeeSalary        EmployeeSalary[]
 }
 
 model School {
-  id            String       @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @default(now())
-  deletedAt     DateTime?
-  schoolName    String?
-  schoolTitle   String?
-  schoolLogo    String?
-  schoolType    ESchoolType?
-  hasStudentIds Boolean?     @default(false)
-  countryName   String?
-  countryCode   String?
-  address       String?
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now())
+  deletedAt      DateTime?
+  schoolName     String?
+  schoolTitle    String?
+  schoolLogo     String?
+  schoolType     ESchoolType?
+  hasStudentIds  Boolean?     @default(false)
+  countryName    String?
+  countryCode    String?
+  address        String?
+  hasEmployeeIds Boolean?     @default(false)
 
   fees             Fee[]
   students         User[]
   paymentsReceived Payment[]
   classrooms       Classroom[]
+  Deductibles      Deductible[]
 }
 
 model Payment {
@@ -221,4 +256,32 @@ model StudentExtraFee {
   studentId String?   @db.ObjectId
   fee       Fee?      @relation(fields: [feeId], references: [id])
   feeId     String?   @db.ObjectId
+}
+
+model EmployeeSalary {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @default(now())
+  current    Boolean           @default(true)
+  date       DateTime
+  from       DateTime?
+  to         DateTime?
+  amount     Float?
+  name       EenumurationType?
+  employee   User?             @relation(fields: [employeeId], references: [id])
+  employeeId String?           @db.ObjectId
+}
+
+model Deductible {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @default(now())
+  schoolId    String?           @db.ObjectId
+  school      School?           @relation(fields: [schoolId], references: [id])
+  optional    Boolean           @default(false)
+  type        EDeductibleType?
+  amount      Float?
+  name        String?
+  enumaration EenumurationType?
+  deletedAt   DateTime?
 }

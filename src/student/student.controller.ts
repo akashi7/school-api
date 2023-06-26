@@ -87,16 +87,19 @@ export class StudentController {
 
   @Get(":id/payments")
   @Auth(ERole.PARENT, ERole.SCHOOL, ERole.STUDENT)
-  @OkResponse()
+  @Paginated()
+  @PageResponse()
   async findPaymentsByStudent(
     @Param("id") id: string,
     @Query() dto: FindPaymentsByStudentDto,
     @GetUser() user: User,
+    @PaginationParams() options: IPagination,
   ) {
     const payload = await this.paymentService.findPaymentsByStudent(
       id,
       dto,
       user,
+      options,
     );
     return new GenericResponse("Student payments retrieved", payload);
   }

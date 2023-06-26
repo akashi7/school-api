@@ -7,10 +7,12 @@ import {
   RawBodyRequest,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { EPaymentMethod, ERole, User } from "@prisma/client";
+import { EPaymentMethod, ERole, Payment, Prisma, User } from "@prisma/client";
 import { Buffer } from "buffer";
 import { Request } from "express";
 import { catchError, lastValueFrom } from "rxjs";
+import { IPagination } from "src/__shared__/interfaces/pagination.interface";
+import { paginate } from "src/__shared__/utils/pagination.util";
 import Stripe from "stripe";
 import { v4 as uuidv4 } from "uuid";
 import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
@@ -22,6 +24,7 @@ import {
   IMpesaAuthResponse,
   IMpesaCreatedPaymentResponse,
   IMpesaStatusResponse,
+  MtnStatusResponse,
   MtnTokenResponse,
   SpennAuthResponse,
   SpennCallbackUrlBody,
@@ -390,6 +393,66 @@ export class PaymentService {
     return { response: response.data, referenceId };
   }
 
+  async checkMtnPaymentStatus(referenceId: string) {
+    console.log("arrived");
+    const token = (await this.generateMtnMomoToken()).access_token;
+    const checkStatus = async (): Promise<string> => {
+      const response = await lastValueFrom(
+        this.httpService
+          .get<MtnStatusResponse>(
+            `${
+              this.configService.get("mtn").url
+            }/collection/v1_0/requesttopay/${referenceId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Ocp-Apim-Subscription-Key": `${
+                  this.configService.get("mtn").subscriptionKey
+                }`,
+                "X-Target-Environment": "mtnrwanda",
+              },
+            },
+          )
+          .pipe(
+            catchError((err) => {
+              throw new BadRequestException(err.response.data);
+            }),
+          ),
+      );
+      return response.data.status;
+    };
+    let status: string = await checkStatus();
+
+    while (!(status === "SUCCESS" || status === "FAILED")) {
+      status = await checkStatus();
+    }
+
+    switch (status) {
+      case "SUCCESS":
+        await this.prismaService.payment.updateMany({
+          where: {
+            referenceCode: referenceId,
+          },
+          data: {
+            status: EPaymentStatus.SUCCESS,
+          },
+        });
+        break;
+      case "FAILED":
+        await this.prismaService.payment.updateMany({
+          where: {
+            referenceCode: referenceId,
+          },
+          data: {
+            status: EPaymentStatus.FAILED,
+          },
+        });
+        break;
+      default:
+        break;
+    }
+  }
+
   async addFeePayment(
     studentId: string,
     feeId: string,
@@ -561,6 +624,7 @@ export class PaymentService {
           dto.amount,
           dto.phoneNumber,
         );
+        this.checkMtnPaymentStatus(mtnResult.referenceId);
         await this.prismaService.payment.update({
           where: { id: newPayment.id },
           data: { referenceCode: mtnResult.referenceId },
@@ -644,6 +708,7 @@ export class PaymentService {
           dto.amount,
           dto.phoneNumber,
         );
+        this.checkMtnPaymentStatus(mtnResult.referenceId);
         await this.prismaService.payment.update({
           where: { id: newPayment.id },
           data: { referenceCode: mtnResult.referenceId },
@@ -656,22 +721,31 @@ export class PaymentService {
     id: string,
     dto: FindPaymentsByStudentDto,
     user: User,
+    { page, size }: IPagination,
   ) {
-    const payments = await this.prismaService.payment.findMany({
-      where: {
-        student:
-          user.role === ERole.SCHOOL
-            ? { id, schoolId: user.schoolId }
-            : user.role === ERole.STUDENT
-            ? { id: user.id }
-            : { id, parentId: user.id },
-        academicYearId: dto.academicYearId,
-        academicTerm: dto.academicTerm,
+    const result = await paginate<Payment, Prisma.PaymentFindManyArgs>(
+      this.prismaService.payment,
+      {
+        where: {
+          student:
+            user.role === ERole.SCHOOL
+              ? { id, schoolId: user.schoolId }
+              : user.role === ERole.STUDENT
+              ? { id: user.id }
+              : { id, parentId: user.id },
+          academicYearId: dto.academicYearId,
+          academicTerm: dto.academicTerm,
+        },
+        include: {
+          fee: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
       },
-      include: {
-        fee: true,
-      },
-    });
-    return payments;
+      +page,
+      +size,
+    );
+    return result;
   }
 }

@@ -34,6 +34,7 @@ export class SchoolService {
             schoolTitle: schoolDto.schoolTitle,
             schoolLogo: schoolDto.schoolLogo,
             hasStudentIds: schoolDto.hasStudentIds,
+            hasEmployeeIds: schoolDto.hasEmployeeIds,
             countryName: schoolDto.countryName,
             countryCode: schoolDto.countryCode,
             address: schoolDto.address,

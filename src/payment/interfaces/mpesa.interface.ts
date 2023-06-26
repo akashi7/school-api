@@ -69,3 +69,15 @@ export interface MtnTokenResponse {
   token_type: string;
   expires_in: number;
 }
+
+export interface MtnStatusResponse {
+  amount: number;
+  currency: string;
+  financialTransactionId: number;
+  externalId: number;
+  payer: {
+    partyIdType: string;
+    partyId: number;
+  };
+  status: string;
+}
