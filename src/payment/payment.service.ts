@@ -394,7 +394,6 @@ export class PaymentService {
   }
 
   async checkMtnPaymentStatus(referenceId: string) {
-    console.log("arrived");
     const token = (await this.generateMtnMomoToken()).access_token;
     const checkStatus = async (): Promise<string> => {
       const response = await lastValueFrom(
@@ -422,9 +421,10 @@ export class PaymentService {
       return response.data.status;
     };
     let status: string = await checkStatus();
-
+    let shouldRespond = false;
     while (!(status === "SUCCESS" || status === "FAILED")) {
       status = await checkStatus();
+      shouldRespond = true;
     }
 
     switch (status) {
@@ -450,6 +450,9 @@ export class PaymentService {
         break;
       default:
         break;
+    }
+    if (shouldRespond) {
+      return status;
     }
   }
 

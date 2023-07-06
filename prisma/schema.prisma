@@ -67,6 +67,11 @@ enum EenumurationType {
   COMMISSION
 }
 
+enum Edeductible {
+  FLAT
+  PERCENTAGE
+}
+
 model User {
   id           String    @id @default(auto()) @map("_id") @db.ObjectId
   createdAt    DateTime  @default(now())
@@ -124,10 +129,14 @@ model User {
   employeeCountryName   String?
   employeeCountryCode   String?
   employeeContactPhone  String?
-  employeeEmail         String?          @unique
+  employeeEmail         String?   @unique
   AccountNumber         Int?
-  position              EpostionsType?
-  employeeSalary        EmployeeSalary[]
+  position              String?
+  positionId            String?   @db.ObjectId
+  Position              Position? @relation(fields: [positionId], references: [id])
+
+  employeeSalary  EmployeeSalary[]
+  DeductibleTypes DeductibleTypes[]
 }
 
 model School {
@@ -150,6 +159,9 @@ model School {
   paymentsReceived Payment[]
   classrooms       Classroom[]
   Deductibles      Deductible[]
+  DeductibleTypes  DeductibleTypes[]
+  Position         Position[]
+  Installment      Installment[]
 }
 
 model Payment {
@@ -232,6 +244,7 @@ model Fee {
   schoolId         String?           @db.ObjectId
   school           School?           @relation(fields: [schoolId], references: [id])
   payments         Payment[]
+  Installment      Installment[]
 }
 
 model StudentPromotion {
@@ -273,15 +286,57 @@ model EmployeeSalary {
 }
 
 model Deductible {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now())
+  schoolId         String?           @db.ObjectId
+  school           School?           @relation(fields: [schoolId], references: [id])
+  amount           Float?
+  enumaration      EenumurationType?
+  deletedAt        DateTime?
+  deductible       DeductibleTypes?  @relation(fields: [deductibleTypeId], references: [id])
+  deductibleTypeId String?           @db.ObjectId
+}
+
+model DeductibleTypes {
   id          String            @id @default(auto()) @map("_id") @db.ObjectId
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @default(now())
   schoolId    String?           @db.ObjectId
   school      School?           @relation(fields: [schoolId], references: [id])
-  optional    Boolean           @default(false)
-  type        EDeductibleType?
-  amount      Float?
   name        String?
+  optional    Boolean?          @default(false)
+  type        Edeductible?
   enumaration EenumurationType?
   deletedAt   DateTime?
+  amount      Float?
+  employee    User?             @relation(fields: [employeeId], references: [id])
+  employeeId  String?           @db.ObjectId
+  Deductible  Deductible[]
+}
+
+model Position {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+  schoolId  String?   @db.ObjectId
+  school    School?   @relation(fields: [schoolId], references: [id])
+  name      String?
+  deletedAt DateTime?
+  User      User[]
+}
+
+model Installment {
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now())
+  schoolId          String?   @db.ObjectId
+  school            School?   @relation(fields: [schoolId], references: [id])
+  installmentNumber Int?
+  minimumAmount     Float?
+  deletedAt         DateTime?
+
+  status Boolean @default(false)
+  fee    Fee?    @relation(fields: [feeId], references: [id])
+  feeId  String? @db.ObjectId
 }

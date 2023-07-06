@@ -18,7 +18,7 @@ export class EmployeeService {
   constructor(private readonly prismaService: PrismaService) {}
 
   /**
-   * Generate a employee identifier (eg:2023013)
+   * Generate a employee identifier (eg:EMP2023013)
    * @returns employee identifier
    */
   async generateEmployeeId() {
@@ -116,8 +116,19 @@ export class EmployeeService {
       };
     }
 
+    let positionIds: string[];
+
     if (dto.position) {
-      whereConditions.position = dto.position;
+      const positions = await this.prismaService.position.findMany({
+        where: {
+          name: {
+            contains: dto.position,
+            mode: "insensitive",
+          },
+          schoolId: user.schoolId,
+        },
+      });
+      positionIds = positions.map((position) => position.id);
     }
 
     if (dto.emunaration && dto.current) {
@@ -135,6 +146,9 @@ export class EmployeeService {
           schoolId: user.schoolId,
           role: ERole.EMPLOYEE,
           ...whereConditions,
+          positionId: {
+            in: positionIds,
+          },
         },
         include: {
           employeeSalary: {
@@ -145,6 +159,7 @@ export class EmployeeService {
               current: true,
             },
           },
+          Position: true,
         },
       },
       +page,
@@ -171,7 +186,9 @@ export class EmployeeService {
         : { id, role: ERole.EMPLOYEE },
       select: {
         ...employeeFields,
-        employeeSalary: { select: { id: true, name: true, amount: true } },
+        employeeSalary: {
+          select: { id: true, name: true, amount: true, from: true, to: true },
+        },
         school: true,
       },
     });

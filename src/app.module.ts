@@ -22,6 +22,9 @@ import { PrismaModule } from "./prisma.module";
 import { PrismaService } from "./prisma.service";
 import { SchoolModule } from "./school/school.module";
 import { StudentModule } from "./student/student.module";
+import { PositionModule } from './position/position.module';
+import { DeductibleTypeModule } from './deductible-type/deductible-type.module';
+import { InstallmentModule } from './installment/installment.module';
 
 @Module({
   imports: [
@@ -40,6 +43,9 @@ import { StudentModule } from "./student/student.module";
     PaymentModule,
     EmployeeModule,
     DeductibleModule,
+    PositionModule,
+    DeductibleTypeModule,
+    InstallmentModule,
   ],
   providers: [
     AppService,

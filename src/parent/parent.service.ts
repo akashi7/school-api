@@ -89,6 +89,15 @@ export class ParentService {
       },
       select: {
         ...studentFields,
+        stream: {
+          select: {
+            id: true,
+            name: true,
+            classroom: { select: { id: true, name: true } },
+          },
+        },
+        school: true,
+        academicYearId: true,
       },
     });
     return children;

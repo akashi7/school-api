@@ -14,22 +14,29 @@ export class DeductibleService {
    * Create a deductible
    * @param dto create object
    * @param user logged in user
-   * @returns
+   * @returns deductible
    */
 
   async create(dto: CreateDeductibleDto, user: User) {
-    dto.types.forEach(async (obj) => {
-      await this.prismaService.deductible.create({
-        data: {
-          schoolId: user.schoolId,
-          type: obj["type"],
-          amount: Number(obj["amount"]),
-          name: dto.name,
-          enumaration: dto.enumaration,
-        },
-      });
+    // dto.types.forEach(async (obj) => {
+    //   await this.prismaService.deductible.create({
+    //     data: {
+    //       schoolId: user.schoolId,
+    //       type: obj["type"],
+    //       amount: Number(obj["amount"]),
+    //       name: dto.name,
+    //       enumaration: dto.enumaration,
+    //     },
+    //   });
+    // });
+    const deductible = await this.prismaService.deductible.create({
+      data: {
+        schoolId: user.schoolId,
+        amount: dto.amount,
+        enumaration: dto.enumaration,
+      },
     });
-    return;
+    return deductible;
   }
 
   /**
@@ -39,6 +46,7 @@ export class DeductibleService {
    * @param user logged in user
    * @returns deductibles
    */
+
   async findAll(
     findDto: FindDeductiblesDto,
     { page, size }: IPagination,
@@ -47,52 +55,42 @@ export class DeductibleService {
     const whereConditions: Prisma.DeductibleWhereInput = {
       schoolId: user.schoolId,
     };
-    if (findDto.search)
-      whereConditions.OR = [
-        { name: { contains: findDto.search, mode: "insensitive" } },
-      ];
-    if (findDto.type) {
-      whereConditions.type = findDto.type;
+
+    let TypesIds: string[];
+
+    if (findDto.search) {
+      const types = await this.prismaService.deductibleTypes.findMany({
+        where: {
+          name: {
+            contains: findDto.search,
+            mode: "insensitive",
+          },
+          schoolId: user.schoolId,
+        },
+      });
+      TypesIds = types.map((type) => type.id);
     }
+
     if (findDto.enumaration) {
       whereConditions.enumaration = findDto.enumaration;
     }
     const payload = await paginate<Deductible, Prisma.DeductibleFindManyArgs>(
       this.prismaService.deductible,
       {
-        where: { ...whereConditions },
+        where: {
+          ...whereConditions,
+          deductibleTypeId: {
+            in: TypesIds,
+          },
+        },
         orderBy: { createdAt: "desc" },
+        include: {
+          deductible: true,
+        },
       },
       +page,
       +size,
     );
     return payload;
-  }
-
-  /**
-   * Build where conditions for find deductibles
-   * @param findDto find options
-   * @param user logged in user
-   * @returns where condition object
-   */
-  private getDeductiblesWhereConditions(
-    findDto: FindDeductiblesDto,
-    user: User,
-  ) {
-    console.log({ findDto });
-    const whereConditions: Prisma.DeductibleWhereInput = {
-      schoolId: user.schoolId,
-    };
-    if (findDto.search)
-      whereConditions.OR = [
-        { name: { contains: findDto.search, mode: "insensitive" } },
-      ];
-    if (findDto.type) {
-      whereConditions.type = findDto.type;
-    }
-    if (findDto.enumaration) {
-      whereConditions.enumaration = findDto.enumaration;
-    }
-    return whereConditions;
   }
 }

@@ -1,4 +1,4 @@
-import { EenumurationType, EpostionsType } from "@prisma/client";
+import { EenumurationType } from "@prisma/client";
 import { OptionalProperty } from "../../__shared__/decorators";
 
 export class EmployeeSearchDto {
@@ -9,5 +9,5 @@ export class EmployeeSearchDto {
   @OptionalProperty()
   current: boolean;
   @OptionalProperty()
-  position: EpostionsType;
+  position: string;
 }

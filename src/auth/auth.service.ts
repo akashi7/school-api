@@ -4,6 +4,7 @@ import { ERole, User } from "@prisma/client";
 import { PrismaService } from "../prisma.service";
 import {
   AdminLoginDto,
+  EmployeeLoginDto,
   ParentLoginDto,
   SchoolLoginDto,
   StudentLoginDto,
@@ -163,6 +164,41 @@ export class AuthService {
   }
 
   /**
+   * Login the employee
+   * @param dto login dto
+   * @returns tokens
+   */
+
+  async employeeLogin(
+    dto: EmployeeLoginDto,
+  ): Promise<{ accessToken: any; refreshToken: any }> {
+    const { countryCode, employeeIdentifier } = dto;
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        countryCode,
+        employeeIdentifier,
+        role: ERole.EMPLOYEE,
+      },
+    });
+    if (!user) throw new BadRequestException("Employee account doesn't exist");
+    const { accessToken, refreshToken } = await this.generateTokens({
+      id: user.id,
+      role: user.role,
+      countryName: user.countryName,
+      schoolId: user.schoolId,
+    });
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { refreshToken: refreshToken },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  /**
    * Get user profile
    * @param user logged in user
    * @returns user profile
@@ -214,11 +250,17 @@ export class AuthService {
    * @param param0 Jwt payload
    * @returns tokens
    */
-  private async generateTokens({ id, role, countryName }: JwtPayload) {
+  private async generateTokens({
+    id,
+    role,
+    countryName,
+    schoolId,
+  }: JwtPayload) {
     const accessToken = await this.jwtService.signAsync({
       id,
       role,
       countryName,
+      schoolId,
     });
     const refreshToken = await this.jwtService.signAsync({
       id,

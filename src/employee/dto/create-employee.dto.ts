@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { EGender, EpostionsType, EenumurationType } from "@prisma/client";
+import { EGender, EenumurationType } from "@prisma/client";
 import {
   IsEnum,
   IsISO31661Alpha2,
@@ -36,9 +36,6 @@ export class CreateEmployeeDto {
   AccountNumber: number;
   @IsNumber()
   amount: number;
-  @IsEnum(EpostionsType)
-  @ApiProperty({ enum: EpostionsType })
-  position: EpostionsType;
   @IsString()
   from: Date;
   @IsString()
@@ -46,4 +43,6 @@ export class CreateEmployeeDto {
   @IsEnum(EenumurationType)
   @ApiProperty({ enum: EenumurationType })
   enumaration: EenumurationType;
+  @IsString()
+  positionId: string;
 }

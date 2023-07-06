@@ -4,4 +4,5 @@ export interface JwtPayload {
   id: string;
   role: ERole;
   countryName: string;
+  schoolId?: string;
 }

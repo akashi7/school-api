@@ -24,3 +24,10 @@ export class SchoolLoginDto {
   @IsString()
   password: string;
 }
+
+export class EmployeeLoginDto {
+  @IsISO31661Alpha2()
+  countryCode: string;
+  @IsString()
+  employeeIdentifier: string;
+}

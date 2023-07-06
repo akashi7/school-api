@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   RawBodyRequest,
   Req,
@@ -49,6 +50,13 @@ export class PaymentController {
   @HttpCode(HttpStatus.OK)
   async spennCallbackHandler(@Body() body: SpennCallbackUrlBody) {
     await this.paymentService.handleSpennCallbackUrl(body);
+    return;
+  }
+
+  @Get("spenn/callback")
+  @HttpCode(HttpStatus.OK)
+  async mtnCallbackHandler(@Param("id") referenceId: string) {
+    await this.paymentService.checkMtnPaymentStatus(referenceId);
     return;
   }
 }

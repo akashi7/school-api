@@ -23,6 +23,7 @@ import { Auth } from "./decorators/auth.decorator";
 import { GetUser } from "./decorators/get-user.decorator";
 import {
   AdminLoginDto,
+  EmployeeLoginDto,
   ParentLoginDto,
   SchoolLoginDto,
   StudentLoginDto,
@@ -92,6 +93,22 @@ export class AuthController {
       dto,
     );
     return new GenericResponse("Parent logged in successfully", {
+      accessToken,
+      refreshToken,
+    });
+  }
+
+  @Post("/login/employee")
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  @HttpCode(HttpStatus.OK)
+  async employeeLogin(
+    @Body() dto: EmployeeLoginDto,
+  ): Promise<GenericResponse<{ refreshToken: string }>> {
+    const { accessToken, refreshToken } = await this.authService.employeeLogin(
+      dto,
+    );
+    return new GenericResponse("Employee logged in successfully", {
       accessToken,
       refreshToken,
     });
