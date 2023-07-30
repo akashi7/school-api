@@ -1,8 +1,8 @@
 import { OptionalProperty } from "../../__shared__/decorators";
 
-export class FindInstallmentDto {
+export class DownloadClassExcelDto {
   @OptionalProperty()
-  search?: string;
+  id?: string;
   @OptionalProperty()
-  studentId?: string;
+  academicYearId?: string;
 }

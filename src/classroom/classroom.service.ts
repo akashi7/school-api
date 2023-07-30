@@ -4,11 +4,13 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Classroom, Prisma, Stream, User } from "@prisma/client";
-import { PrismaService } from "../prisma.service";
+import { Workbook } from "exceljs";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
 import { paginate } from "../__shared__/utils/pagination.util";
+import { PrismaService } from "../prisma.service";
 import { CreateClassroomDto } from "./dto/create-classroom.dto";
 import { CreateStreamDto } from "./dto/create-stream.dto";
+import { DownloadClassExcelDto } from "./dto/download.dto";
 import { FindClassroomsDto } from "./dto/find-classrooms.dto";
 import { UpdateClassroomDto } from "./dto/update-classroom.dto";
 import { UpdateStreamDto } from "./dto/update-stream.dto";
@@ -198,6 +200,7 @@ export class ClassroomService {
         ? { id: streamId, classroomId }
         : { id: streamId },
     });
+
     if (!stream) throw new NotFoundException("Stream not found");
     return stream;
   }
@@ -254,5 +257,71 @@ export class ClassroomService {
       data: { ...dto },
     });
     return await this.findOneStream(id);
+  }
+
+  async downloadClassList(user: User, dto: DownloadClassExcelDto) {
+    const workbook = new Workbook();
+    const worksheet = workbook.addWorksheet("students lists in a stream");
+
+    const currentAcademicYearId =
+      await this.prismaService.academicYear.findFirst({
+        where: {
+          current: true,
+        },
+      });
+
+    // Fetch stream
+
+    const streams = await this.prismaService.stream.findFirst({
+      where: {
+        id: dto.id,
+        studentPromotions: {
+          some: {
+            academicYearId: dto.academicYearId
+              ? dto.academicYearId
+              : currentAcademicYearId.id,
+          },
+        },
+      },
+      include: {
+        studentPromotions: {
+          include: {
+            student: true,
+          },
+        },
+      },
+    });
+
+    const studentPromotions = streams?.studentPromotions || [];
+
+    worksheet.addRow(["No", "Name", "Student id"]);
+    const nameColumn = worksheet.getColumn(2);
+    const studentColumn = worksheet.getColumn(3);
+    nameColumn.width = 30;
+    studentColumn.width = 35;
+
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true };
+
+    let rowNumber = 0;
+
+    studentPromotions.forEach((studentPromotion) => {
+      const student = studentPromotion.student;
+      if (student) {
+        rowNumber++;
+        worksheet.addRow([
+          rowNumber,
+          student.fullName,
+          student.studentIdentifier,
+        ]);
+      }
+    });
+
+    const filename = `stream_${streams?.name}_students_names`;
+
+    return {
+      workbook,
+      filename,
+    };
   }
 }

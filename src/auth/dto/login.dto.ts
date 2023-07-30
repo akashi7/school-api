@@ -1,4 +1,4 @@
-import { IsISO31661Alpha2, IsString } from "class-validator";
+import { IsISO31661Alpha2, IsOptional, IsString } from "class-validator";
 
 export class AdminLoginDto {
   @IsString()
@@ -30,4 +30,19 @@ export class EmployeeLoginDto {
   countryCode: string;
   @IsString()
   employeeIdentifier: string;
+}
+
+export class GoogleLoginDto {
+  @IsString()
+  token: string;
+  @IsString()
+  url?: string;
+  @IsString()
+  @IsOptional()
+  role: string;
+}
+
+export class GoogleSignupDto {
+  @IsString()
+  token: string;
 }

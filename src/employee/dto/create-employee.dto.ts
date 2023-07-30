@@ -14,18 +14,22 @@ export class CreateEmployeeDto {
   @IsOptional()
   employeeIdentifier?: string;
   @IsString()
-  employeeFullName: string;
+  fullName: string;
   @IsString()
-  employeeEmail: string;
+  familyName: string;
+  @IsString()
+  RssbCode: string;
+  @IsString()
+  email: string;
   @IsString()
   address: string;
   @IsString()
-  employeePassportPhoto: string;
+  passportPhoto: string;
   @IsString()
-  employeeDob: Date;
+  dob: Date;
   @IsEnum(EGender)
   @ApiProperty({ enum: EGender })
-  employeeGender: EGender;
+  gender: EGender;
   @IsPhoneNumber("RW")
   employeeContactPhone: string;
   @IsString()

@@ -46,6 +46,11 @@ export function appConfig(): IAppConfig {
       apiUser: process.env.MOMO_API_USER,
       subscriptionKey: process.env.MOMO_API_SUBSCRIPTION_KEY,
     },
+    sms: {
+      url: process.env.SMS_URL,
+      username: process.env.SMS_USERNAME,
+      password: process.env.SMS_PASSWORD,
+    },
   };
 }
 

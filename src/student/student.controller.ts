@@ -53,7 +53,7 @@ export class StudentController {
   }
 
   @Get()
-  @Auth(ERole.SCHOOL)
+  @Auth(ERole.SCHOOL, ERole.ADMIN, ERole.RELATIVE)
   @Paginated()
   @PageResponse()
   async getStudents(
@@ -66,7 +66,7 @@ export class StudentController {
   }
 
   @Get(":id")
-  @Auth(ERole.PARENT, ERole.SCHOOL, ERole.STUDENT)
+  @Auth(ERole.PARENT, ERole.SCHOOL, ERole.STUDENT, ERole.RELATIVE)
   @OkResponse()
   async getStudent(@Param("id") id: string, @GetUser() user: User) {
     const payload = await this.studentService.findOne(id, user);
@@ -74,7 +74,7 @@ export class StudentController {
   }
 
   @Get(":id/fees")
-  @Auth(ERole.PARENT, ERole.SCHOOL, ERole.STUDENT)
+  @Auth(ERole.PARENT, ERole.SCHOOL, ERole.STUDENT, ERole.RELATIVE)
   @OkResponse()
   async findFeesByStudent(
     @Param("id") id: string,
@@ -86,7 +86,7 @@ export class StudentController {
   }
 
   @Get(":id/payments")
-  @Auth(ERole.PARENT, ERole.SCHOOL, ERole.STUDENT)
+  @Auth(ERole.PARENT, ERole.SCHOOL, ERole.STUDENT, ERole.RELATIVE)
   @Paginated()
   @PageResponse()
   async findPaymentsByStudent(
@@ -237,5 +237,13 @@ export class StudentController {
       user,
     );
     return new GenericResponse("Extra fee deleted", payload);
+  }
+
+  @Get("search/student")
+  @Auth(ERole.SCHOOL, ERole.PARENT, ERole.RELATIVE)
+  @OkResponse()
+  async SearchStudent(@Param("studentId") studentId: string) {
+    const payload = await this.studentService.searchStudent(studentId);
+    return new GenericResponse("Student retrieved", payload);
   }
 }

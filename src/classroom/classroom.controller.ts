@@ -7,11 +7,11 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
-import { Auth } from "../auth/decorators/auth.decorator";
-import { GetUser } from "../auth/decorators/get-user.decorator";
+import { Response } from "express";
 import {
   CreatedResponse,
   OkResponse,
@@ -19,12 +19,15 @@ import {
 } from "../__shared__/decorators";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
+import { Auth } from "../auth/decorators/auth.decorator";
+import { GetUser } from "../auth/decorators/get-user.decorator";
 import { ClassroomService } from "./classroom.service";
 import { CreateClassroomDto } from "./dto/create-classroom.dto";
 import { CreateStreamDto } from "./dto/create-stream.dto";
 import { FindClassroomsDto } from "./dto/find-classrooms.dto";
 import { UpdateClassroomDto } from "./dto/update-classroom.dto";
 import { UpdateStreamDto } from "./dto/update-stream.dto";
+import { DownloadClassExcelDto } from "./dto/download.dto";
 
 @Controller("classrooms")
 @Auth(ERole.SCHOOL)
@@ -153,4 +156,33 @@ export class ClassroomController {
     );
     return new GenericResponse("Stream deleted", payload);
   }
+
+  @Auth(ERole.SCHOOL)
+  @Get("download/files")
+  async downloadPayroll(
+    @GetUser() user: User,
+    @Res() res: Response,
+    @Query() dto: DownloadClassExcelDto,
+  ) {
+    const { workbook, filename } =
+      await this.classroomService.downloadClassList(user, dto);
+    res.set({
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename=${filename}.xlsx`,
+    });
+    workbook.xlsx.write(res).then(() => res.end());
+  }
+
+  // @Auth(ERole.SCHOOL)
+  // @Get("download/files/pdf")
+  // async downloadPdfClassrooms(
+  //   @GetUser() user: User,
+  //   @Res() res: Response,
+  //   @Query("id") id?: string,
+  // ) {
+  //   const { workbook, filename } =
+  //     await this.classroomService.downloadClassList(user, id);
+  //   return;
+  // }
 }

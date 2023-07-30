@@ -12,11 +12,11 @@ import {
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
 import { Response } from "express";
-import { Auth } from "../auth/decorators/auth.decorator";
-import { GetUser } from "../auth/decorators/get-user.decorator";
 import { CreatedResponse, PageResponse } from "../__shared__/decorators";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
+import { Auth } from "../auth/decorators/auth.decorator";
+import { GetUser } from "../auth/decorators/get-user.decorator";
 import { CreateFeeDto } from "./dto/create-fee.dto";
 import {
   DownloadFeesByClassroomsDto,
@@ -41,6 +41,7 @@ export class FeeController {
 
   @Get()
   @PageResponse()
+  @Auth(ERole.SCHOOL, ERole.PARENT, ERole.RELATIVE, ERole.STUDENT)
   async findAll(
     @Query() paginationDto: PaginationDto,
     @Query() findDto: FindFeesDto,

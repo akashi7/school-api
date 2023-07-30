@@ -13,10 +13,14 @@ import { Request } from "express";
 import { catchError, lastValueFrom } from "rxjs";
 import { IPagination } from "src/__shared__/interfaces/pagination.interface";
 import { paginate } from "src/__shared__/utils/pagination.util";
+import { MailService } from "src/mail/mail.service";
 import Stripe from "stripe";
 import { v4 as uuidv4 } from "uuid";
 import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
-import { FindPaymentsByStudentDto } from "../fee/dto/find-fees.dto";
+import {
+  FindAllPaymentsDto,
+  FindPaymentsByStudentDto,
+} from "../fee/dto/find-fees.dto";
 import { PayFeeDto, PayFeeWithThirdPartyDto } from "../fee/dto/pay-fee.dto";
 import { PrismaService } from "../prisma.service";
 import { EPaymentStatus } from "./enums";
@@ -40,6 +44,7 @@ export class PaymentService {
     private readonly prismaService: PrismaService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService<IAppConfig>,
+    private readonly mailService: MailService,
   ) {
     this.stripe = new Stripe(this.configService.get("stripe").secretKey, {
       apiVersion: "2022-11-15",
@@ -51,6 +56,19 @@ export class PaymentService {
       rejectUnauthorized: false,
     });
     return agent;
+  }
+
+  async sendMail(email: string, content: string) {
+    try {
+      await this.mailService.sendMail(
+        email,
+        "Payment status",
+        "no-reply@schoolnestpay.com",
+        content,
+      );
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   async createStripePaymentIntent(
@@ -82,11 +100,20 @@ export class PaymentService {
           paymentMethod: EPaymentMethod.STRIPE,
         },
       });
+      const payments = await this.prismaService.payment.findFirst({
+        where: {
+          id: payment.id,
+        },
+        include: {
+          student: true,
+        },
+      });
       if (!payment) return;
       switch (event.type) {
         case "payment_intent.succeeded":
           const paymentIntentSucceeded = event.data.object;
           Logger.log(paymentIntentSucceeded, "payment_intent.succeeded");
+
           await this.prismaService.payment.update({
             where: {
               id: payment.id,
@@ -95,6 +122,12 @@ export class PaymentService {
               status: EPaymentStatus.SUCCESS,
             },
           });
+
+          await this.sendMail(
+            payments.student.email,
+            `Your payment For ${payments.student.fullName} for academic term ${payment.academicTerm} is succesfull `,
+          );
+
           break;
         case "payment_intent.payment_failed":
           await this.prismaService.payment.update({
@@ -105,6 +138,10 @@ export class PaymentService {
               status: EPaymentStatus.FAILED,
             },
           });
+          await this.sendMail(
+            payments.student.email,
+            `Your payment For ${payments.student.fullName} for academic term ${payment.academicTerm} has failed `,
+          );
         case "payment_intent.canceled":
           await this.prismaService.payment.update({
             where: {
@@ -287,6 +324,15 @@ export class PaymentService {
   }
 
   async handleSpennCallbackUrl(body: SpennCallbackUrlBody) {
+    const payment = await this.prismaService.payment.findFirst({
+      where: {
+        referenceCode: body.ExternalReference,
+      },
+      include: {
+        student: true,
+      },
+    });
+
     switch (body.RequestStatus) {
       case 2:
         await this.prismaService.payment.updateMany({
@@ -297,6 +343,10 @@ export class PaymentService {
             status: EPaymentStatus.SUCCESS,
           },
         });
+        await this.sendMail(
+          payment.student.email,
+          `Your payment For ${payment.student.fullName} for academic term ${payment.academicTerm} is sucessfull`,
+        );
         break;
       case 3:
         await this.prismaService.payment.updateMany({
@@ -307,6 +357,10 @@ export class PaymentService {
             status: EPaymentStatus.FAILED,
           },
         });
+        await this.sendMail(
+          payment.student.email,
+          `Your payment For ${payment.student.fullName} for academic term ${payment.academicTerm} has failed `,
+        );
         break;
       case 4:
         await this.prismaService.payment.updateMany({
@@ -317,6 +371,10 @@ export class PaymentService {
             status: EPaymentStatus.FAILED,
           },
         });
+        await this.sendMail(
+          payment.student.email,
+          `Your payment For ${payment.student.fullName} for academic term ${payment.academicTerm} has failed `,
+        );
         break;
       default:
         break;
@@ -420,6 +478,16 @@ export class PaymentService {
       );
       return response.data.status;
     };
+
+    const payment = await this.prismaService.payment.findFirst({
+      where: {
+        referenceCode: referenceId,
+      },
+      include: {
+        student: true,
+      },
+    });
+
     let status: string = await checkStatus();
     let shouldRespond = false;
     while (!(status === "SUCCESS" || status === "FAILED")) {
@@ -437,6 +505,10 @@ export class PaymentService {
             status: EPaymentStatus.SUCCESS,
           },
         });
+        await this.sendMail(
+          payment.student.email,
+          `Your payment For ${payment.student.fullName} for academic term ${payment.academicTerm} is successfully `,
+        );
         break;
       case "FAILED":
         await this.prismaService.payment.updateMany({
@@ -447,6 +519,10 @@ export class PaymentService {
             status: EPaymentStatus.FAILED,
           },
         });
+        await this.sendMail(
+          payment.student.email,
+          `Your payment For ${payment.student.fullName} for academic term ${payment.academicTerm} has failed `,
+        );
         break;
       default:
         break;
@@ -565,13 +641,20 @@ export class PaymentService {
         ? await this.prismaService.user.findFirst({
             where: { id: studentId, parentId: user.id, role: ERole.STUDENT },
           })
+        : user.role === ERole.RELATIVE
+        ? await this.prismaService.user.findFirst({
+            where: { id: studentId, relativeId: user.id, role: ERole.STUDENT },
+          })
         : await this.prismaService.user.findFirst({
             where: { id: user.id, role: ERole.STUDENT },
           });
 
     if (!student) throw new NotFoundException("Student not found");
     const fee = await this.prismaService.fee.findFirst({
-      where: { id: feeId, schoolId: user.schoolId },
+      where: {
+        id: feeId,
+        schoolId: !user.schoolId ? student.schoolId : user.schoolId,
+      },
     });
     if (!fee) throw new NotFoundException("Fee not found");
     const academicYear = await this.prismaService.academicYear.findFirst({
@@ -654,6 +737,10 @@ export class PaymentService {
         ? await this.prismaService.user.findFirst({
             where: { id: studentId, parentId: user.id, role: ERole.STUDENT },
           })
+        : user.role === ERole.RELATIVE
+        ? await this.prismaService.user.findFirst({
+            where: { id: studentId, relativeId: user.id, role: ERole.STUDENT },
+          })
         : await this.prismaService.user.findFirst({
             where: { id: user.id, role: ERole.STUDENT },
           });
@@ -726,21 +813,90 @@ export class PaymentService {
     user: User,
     { page, size }: IPagination,
   ) {
+    let result: any;
+
+    if (user.role === ERole.ADMIN) {
+      result = await paginate<Payment, Prisma.PaymentFindManyArgs>(
+        this.prismaService.payment,
+        {
+          where: {
+            academicYearId: dto.academicYearId,
+            academicTerm: dto.academicTerm,
+          },
+          include: {
+            fee: true,
+            academicYear: true,
+            student: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+        +page,
+        +size,
+      );
+    } else {
+      result = await paginate<Payment, Prisma.PaymentFindManyArgs>(
+        this.prismaService.payment,
+        {
+          where: {
+            student:
+              user.role === ERole.SCHOOL
+                ? { id, schoolId: user.schoolId }
+                : user.role === ERole.STUDENT
+                ? { id: user.id }
+                : { id, parentId: user.id },
+            academicYearId: dto.academicYearId,
+            academicTerm: dto.academicTerm,
+          },
+          include: {
+            fee: true,
+            academicYear: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+        +page,
+        +size,
+      );
+    }
+
+    return result;
+  }
+  async findAllPaymentsMade(
+    dto: FindAllPaymentsDto,
+    user: User,
+    { page, size }: IPagination,
+  ) {
+    const whereClause: Prisma.PaymentWhereInput = {};
+
+    if (dto.academicYearId) {
+      whereClause.academicYearId = dto.academicYearId;
+    }
+
+    if (dto.academicTerm) {
+      whereClause.academicTerm = dto.academicTerm;
+    }
+
+    if (user.role !== ERole.ADMIN) {
+      whereClause.schoolId = user.schoolId;
+    }
+
+    if (dto.studentIdentifier) {
+      whereClause.student = {
+        studentIdentifier: dto.studentIdentifier,
+      };
+    }
+
     const result = await paginate<Payment, Prisma.PaymentFindManyArgs>(
       this.prismaService.payment,
       {
-        where: {
-          student:
-            user.role === ERole.SCHOOL
-              ? { id, schoolId: user.schoolId }
-              : user.role === ERole.STUDENT
-              ? { id: user.id }
-              : { id, parentId: user.id },
-          academicYearId: dto.academicYearId,
-          academicTerm: dto.academicTerm,
-        },
+        where: whereClause,
         include: {
           fee: true,
+          academicYear: true,
+          student: true,
         },
         orderBy: {
           createdAt: "desc",
@@ -749,6 +905,7 @@ export class PaymentService {
       +page,
       +size,
     );
+
     return result;
   }
 }

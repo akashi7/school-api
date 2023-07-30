@@ -5,6 +5,7 @@ import {
 } from "@nestjs/common";
 import {
   EAcademicTerm,
+  EFeeType,
   ERole,
   Fee,
   Payment,
@@ -108,8 +109,20 @@ export class FeeService {
    * @returns where condition object
    */
   private getFeesWhereConditions(findDto: FindFeesDto, user: User) {
+    let schoolId: string;
+    if (!user.schoolId) {
+      (async () => {
+        const children = await this.prismaService.user.findFirst({
+          where: {
+            role: ERole.STUDENT,
+            parentId: user.id,
+          },
+        });
+        schoolId = children.schoolId;
+      })();
+    }
     const whereConditions: Prisma.FeeWhereInput = {
-      schoolId: user.schoolId,
+      schoolId: !user.schoolId ? schoolId : user.schoolId,
     };
     if (findDto.search)
       whereConditions.OR = [
@@ -131,6 +144,8 @@ export class FeeService {
     if (findDto.classroomId)
       whereConditions.classroomIDs = { has: findDto.classroomId };
     if (findDto.term) whereConditions.academicTerms = { has: findDto.term };
+    if (findDto.installment === "true")
+      whereConditions.type = EFeeType.SCHOOL_FEE;
     return whereConditions;
   }
 
@@ -151,7 +166,9 @@ export class FeeService {
               ? { id, schoolId: user.schoolId }
               : user.role === ERole.STUDENT
               ? { id: user.id }
-              : { id, parentId: user.id },
+              : user.role === ERole.PARENT
+              ? { id, parentId: user.id }
+              : { id, relativeId: user.id },
           academicYearId: dto.academicYearId,
         },
         include: {
@@ -168,7 +185,7 @@ export class FeeService {
     const fees = await this.prismaService.fee.findMany({
       where: {
         schoolId:
-          user.role === ERole.PARENT
+          user.role === ERole.PARENT || ERole.RELATIVE
             ? school.schoolId
             : user.role === ERole.STUDENT
             ? user.schoolId

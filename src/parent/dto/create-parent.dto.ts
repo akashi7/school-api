@@ -1,4 +1,4 @@
-import { IsOptional, IsPhoneNumber, IsString } from "class-validator";
+import { IsEmail, IsOptional, IsPhoneNumber, IsString } from "class-validator";
 
 export class CreateParentDto {
   @IsString()
@@ -6,4 +6,6 @@ export class CreateParentDto {
   fullName: string;
   @IsPhoneNumber("RW")
   phone: string;
+  @IsEmail()
+  email: string;
 }

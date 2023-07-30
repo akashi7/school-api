@@ -14,6 +14,7 @@ enum ERole {
   PARENT
   SCHOOL
   EMPLOYEE
+  RELATIVE
 }
 
 enum EPaymentMethod {
@@ -72,6 +73,20 @@ enum Edeductible {
   PERCENTAGE
 }
 
+enum ENotification {
+  INSTALLMENT
+}
+
+enum EStatus {
+  APPROVED
+  DECLINED
+}
+
+enum Emessage {
+  EMAIL
+  PHONE
+}
+
 model User {
   id           String    @id @default(auto()) @map("_id") @db.ObjectId
   createdAt    DateTime  @default(now())
@@ -108,35 +123,36 @@ model User {
   schoolId String? @db.ObjectId
   school   School? @relation(fields: [schoolId], references: [id])
 
-  parentId String? @db.ObjectId
-  parent   User?   @relation("ParentChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId   String? @db.ObjectId
+  parent     User?   @relation("ParentChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentName String?
+
+  relativeId String? @db.ObjectId
+  relative   User?   @relation("RelativeChildren", fields: [relativeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   studentPromotions StudentPromotion[]
   studentExtraFees  StudentExtraFee[]
   paymentsMade      Payment[]
 
   // PARENT
-  phone    String? @unique
-  children User[]  @relation("ParentChildren")
+  phone     String? @unique
+  children  User[]  @relation("ParentChildren")
+  relatives User[]  @relation("RelativeChildren")
 
   //EMPLOYEE
 
-  employeeIdentifier    String?
-  employeeFullName      String?
-  employeePassportPhoto String?
-  employeeDob           DateTime?
-  employeeGender        EGender?
-  employeeCountryName   String?
-  employeeCountryCode   String?
-  employeeContactPhone  String?
-  employeeEmail         String?   @unique
-  AccountNumber         Int?
-  position              String?
-  positionId            String?   @db.ObjectId
-  Position              Position? @relation(fields: [positionId], references: [id])
+  employeeIdentifier   String?
+  familyName           String?
+  RssbCode             String?
+  employeeContactPhone String?
+  AccountNumber        Int?
+  position             String?
+  positionId           String?   @db.ObjectId
+  Position             Position? @relation(fields: [positionId], references: [id])
 
   employeeSalary  EmployeeSalary[]
   DeductibleTypes DeductibleTypes[]
+  Installment     Installment[]
 }
 
 model School {
@@ -154,14 +170,16 @@ model School {
   address        String?
   hasEmployeeIds Boolean?     @default(false)
 
-  fees             Fee[]
-  students         User[]
-  paymentsReceived Payment[]
-  classrooms       Classroom[]
-  Deductibles      Deductible[]
-  DeductibleTypes  DeductibleTypes[]
-  Position         Position[]
-  Installment      Installment[]
+  fees               Fee[]
+  students           User[]
+  paymentsReceived   Payment[]
+  classrooms         Classroom[]
+  Deductibles        Deductible[]
+  DeductibleTypes    DeductibleTypes[]
+  Position           Position[]
+  Installment        Installment[]
+  SchoolNotification SchoolNotification[]
+  Messages           Messages[]
 }
 
 model Payment {
@@ -327,16 +345,60 @@ model Position {
 }
 
 model Installment {
-  id                String    @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @default(now())
-  schoolId          String?   @db.ObjectId
-  school            School?   @relation(fields: [schoolId], references: [id])
+  id                String         @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @default(now())
+  schoolId          String?        @db.ObjectId
+  school            School?        @relation(fields: [schoolId], references: [id])
   installmentNumber Int?
   minimumAmount     Float?
   deletedAt         DateTime?
+  reason            String?
+  response          String?
+  approveStatus     Boolean?       @default(false)
+  status            EStatus?
+  term              EAcademicTerm?
 
-  status Boolean @default(false)
-  fee    Fee?    @relation(fields: [feeId], references: [id])
-  feeId  String? @db.ObjectId
+  fee                Fee?                 @relation(fields: [feeId], references: [id])
+  feeId              String?              @db.ObjectId
+  student            User?                @relation(fields: [studentId], references: [id])
+  studentId          String?              @db.ObjectId
+  installments       installmentNumber[]
+  SchoolNotification SchoolNotification[]
+}
+
+model installmentNumber {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now())
+  installmentId String?      @db.ObjectId
+  installment   Installment? @relation(fields: [installmentId], references: [id])
+  date          DateTime?
+  amount        Float?
+  deletedAt     DateTime?
+}
+
+model SchoolNotification {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now())
+  deletedAt     DateTime?
+  schoolId      String?        @db.ObjectId
+  school        School?        @relation(fields: [schoolId], references: [id])
+  name          ENotification?
+  installmentId String?        @db.ObjectId
+  installment   Installment?   @relation(fields: [installmentId], references: [id])
+}
+
+model Messages {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now())
+  deletedAt   DateTime?
+  to          ERole[]
+  messageType Emessage[]
+  message     String?
+  subject     String?
+  schoolId    String?    @db.ObjectId
+  school      School?    @relation(fields: [schoolId], references: [id])
 }

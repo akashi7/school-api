@@ -13,18 +13,22 @@ import { AcademicYearModule } from "./academic-year/academic-year.module";
 import { AppService } from "./app.service";
 import { AuthModule } from "./auth/auth.module";
 import { ClassroomModule } from "./classroom/classroom.module";
+import { DeductibleTypeModule } from "./deductible-type/deductible-type.module";
 import { DeductibleModule } from "./deductible/deductible.module";
 import { EmployeeModule } from "./employee/employee.module";
 import { FeeModule } from "./fee/fee.module";
+import { InstallmentModule } from "./installment/installment.module";
+import { MessageModule } from "./message/message.module";
 import { ParentModule } from "./parent/parent.module";
 import { PaymentModule } from "./payment/payment.module";
+import { PayrollModule } from "./payroll/payroll.module";
+import { PositionModule } from "./position/position.module";
 import { PrismaModule } from "./prisma.module";
 import { PrismaService } from "./prisma.service";
 import { SchoolModule } from "./school/school.module";
 import { StudentModule } from "./student/student.module";
-import { PositionModule } from './position/position.module';
-import { DeductibleTypeModule } from './deductible-type/deductible-type.module';
-import { InstallmentModule } from './installment/installment.module';
+import { MailModule } from './mail/mail.module';
+import { RelativeModule } from './relative/relative.module';
 
 @Module({
   imports: [
@@ -46,6 +50,10 @@ import { InstallmentModule } from './installment/installment.module';
     PositionModule,
     DeductibleTypeModule,
     InstallmentModule,
+    PayrollModule,
+    MessageModule,
+    MailModule,
+    RelativeModule,
   ],
   providers: [
     AppService,

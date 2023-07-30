@@ -34,25 +34,26 @@ export class StudentService {
     { page, size }: IPagination,
     user: User,
   ) {
+    console.log({ user });
     const whereConditions: Prisma.UserWhereInput = {};
     const studentPromotionWhereInput: Prisma.StudentPromotionWhereInput = {};
-    if (dto.academicYearId)
-      whereConditions.studentPromotions = {
-        some: {
-          academicYearId: dto.academicYearId,
-        },
-      };
+    if (dto.academicYearId) {
+      whereConditions.academicYearId = dto.academicYearId;
+    }
+    // whereConditions.studentPromotions = {
+    //   some: {
+    //     academicYearId: dto.academicYearId,
+    //   },
+    // };
     if (dto.classroomId)
       whereConditions.stream = {
         classroomId: dto.classroomId,
       };
     if (dto.streamId) {
-      studentPromotionWhereInput.streamId = dto.streamId;
-      whereConditions.studentPromotions = {
-        some: { ...studentPromotionWhereInput },
-      };
+      // studentPromotionWhereInput.streamId = dto.streamId;
+      whereConditions.streamId = dto.streamId;
     }
-    if (dto.search)
+    if (dto.search) {
       whereConditions.OR = [
         {
           fullName: { contains: dto.search, mode: "insensitive" },
@@ -61,42 +62,74 @@ export class StudentService {
           studentIdentifier: { contains: dto.search, mode: "insensitive" },
         },
       ];
-    const result = await paginate<User, Prisma.UserFindManyArgs>(
-      this.prismaService.user,
-      {
+    }
+    let result: any;
+
+    if (!user.schoolId && user.role === ERole.ADMIN) {
+      result = await this.prismaService.user.findMany({
         where: {
-          schoolId: user.schoolId,
           role: ERole.STUDENT,
-          ...whereConditions,
         },
-        include: {
-          studentPromotions: {
-            where: { ...studentPromotionWhereInput },
-            select: {
-              id: true,
-              stream: {
-                select: {
-                  id: true,
-                  name: true,
-                  classroom: { select: { id: true, name: true } },
-                },
+      });
+    } else if (!user.schoolId && user.role === ERole.RELATIVE) {
+      if (!dto.search) {
+        result = [];
+      } else {
+        result = await this.prismaService.user.findMany({
+          where: {
+            role: ERole.STUDENT,
+            studentIdentifier: dto.search,
+          },
+          include: {
+            stream: {
+              select: {
+                id: true,
+                name: true,
+                classroom: { select: { id: true, name: true } },
               },
             },
-            orderBy: { createdAt: "desc" },
           },
-          parent: { select: { id: true, phone: true } },
-          stream: {
-            select: {
-              id: true,
-              name: true,
-              classroom: { select: { id: true, name: true } },
+        });
+      }
+    } else {
+      result = await paginate<User, Prisma.UserFindManyArgs>(
+        this.prismaService.user,
+        {
+          where: {
+            schoolId: user.schoolId,
+            role: ERole.STUDENT,
+            ...whereConditions,
+          },
+          include: {
+            // studentPromotions: {
+            //   where: { ...studentPromotionWhereInput },
+            //   select: {
+            //     id: true,
+            //     stream: {
+            //       select: {
+            //         id: true,
+            //         name: true,
+            //         classroom: { select: { id: true, name: true } },
+            //       },
+            //     },
+            //   },
+            //   orderBy: { createdAt: "desc" },
+            // },
+            parent: { select: { id: true, phone: true } },
+            stream: {
+              select: {
+                id: true,
+                name: true,
+                classroom: { select: { id: true, name: true } },
+              },
             },
           },
         },
-      },
-      +page,
-      +size,
-    );
+        +page,
+        +size,
+      );
+    }
+
     return result;
   }
 
@@ -175,7 +208,7 @@ export class StudentService {
               role: ERole.STUDENT,
               schoolId: user.schoolId,
             }
-          : user.role === ERole.PARENT
+          : user.role === ERole.PARENT || user.role === ERole.RELATIVE
           ? {
               id,
               role: ERole.STUDENT,
@@ -294,14 +327,13 @@ export class StudentService {
         await tx.user.update({
           where: { id: studentId },
           data: {
-            academicYearId: dto.academicYearId,
             streamId: dto.streamId,
           },
         });
         await tx.studentPromotion.create({
           data: {
             studentId,
-            academicYearId: dto.academicYearId,
+            // academicYearId: dto.academicYearId,
             streamId: dto.streamId,
           },
         });
@@ -343,5 +375,17 @@ export class StudentService {
       where: { id: extraFee.id },
     });
     return extraFeeId;
+  }
+
+  async searchStudent(studentId: string) {
+    const student = await this.prismaService.user.findFirst({
+      where: {
+        studentIdentifier: {
+          contains: studentId,
+          mode: "insensitive",
+        },
+      },
+    });
+    return student;
   }
 }

@@ -25,6 +25,15 @@ export class FindPaymentsByStudentDto {
   academicTerm: EAcademicTerm;
 }
 
+export class FindAllPaymentsDto {
+  @OptionalProperty()
+  academicYearId?: string;
+  @OptionalProperty({ enum: EAcademicTerm })
+  academicTerm?: EAcademicTerm;
+  @OptionalProperty()
+  studentIdentifier?: string;
+}
+
 export class FindFeesDto {
   @OptionalProperty()
   search?: string;
@@ -37,4 +46,6 @@ export class FindFeesDto {
   term?: EAcademicTerm;
   @OptionalProperty()
   academicYearId?: string;
+  @OptionalProperty()
+  installment?: string;
 }

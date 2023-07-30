@@ -6,12 +6,23 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   RawBodyRequest,
   Req,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ApiTags } from "@nestjs/swagger";
+import { ERole, User } from "@prisma/client";
 import { Request } from "express";
+import {
+  PageResponse,
+  Paginated,
+  PaginationParams,
+} from "src/__shared__/decorators";
+import { IPagination } from "src/__shared__/interfaces/pagination.interface";
+import { Auth } from "src/auth/decorators/auth.decorator";
+import { GetUser } from "src/auth/decorators/get-user.decorator";
+import { FindAllPaymentsDto } from "src/fee/dto/find-fees.dto";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
 import { SpennCallbackUrlBody } from "./interfaces/mpesa.interface";
@@ -58,5 +69,22 @@ export class PaymentController {
   async mtnCallbackHandler(@Param("id") referenceId: string) {
     await this.paymentService.checkMtnPaymentStatus(referenceId);
     return;
+  }
+
+  @Get()
+  @Auth(ERole.ADMIN, ERole.SCHOOL)
+  @Paginated()
+  @PageResponse()
+  async findPayments(
+    @Query() dto: FindAllPaymentsDto,
+    @GetUser() user: User,
+    @PaginationParams() options: IPagination,
+  ) {
+    const payload = await this.paymentService.findAllPaymentsMade(
+      dto,
+      user,
+      options,
+    );
+    return new GenericResponse("Student payments retrieved", payload);
   }
 }

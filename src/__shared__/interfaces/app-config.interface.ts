@@ -9,6 +9,7 @@ export interface IAppConfig {
   mpesa?: IMpesaConfig;
   spenn?: SpennConfig;
   mtn?: MtnConfig;
+  sms?: SmsConfig;
 }
 
 interface JwtConfig {
@@ -43,4 +44,9 @@ interface MtnConfig {
   apiKey: string;
   apiUser: string;
   subscriptionKey: string;
+}
+interface SmsConfig {
+  url: string;
+  username: string;
+  password: string;
 }

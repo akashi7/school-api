@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Patch, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
 import {
@@ -13,6 +13,7 @@ import { IPagination } from "src/__shared__/interfaces/pagination.interface";
 import { Auth } from "src/auth/decorators/auth.decorator";
 import { GetUser } from "src/auth/decorators/get-user.decorator";
 import { createInstallmentDto } from "./dto/create-installment.dto";
+import { DeclineOrApproveInstallmentDto } from "./dto/decline.dto";
 import { FindInstallmentDto } from "./dto/find-installments.dto";
 import { InstallmentService } from "./installment.service";
 
@@ -22,7 +23,7 @@ export class InstallmentController {
   constructor(private readonly installmentService: InstallmentService) {}
 
   @Post()
-  @Auth(ERole.SCHOOL)
+  @Auth(ERole.PARENT, ERole.STUDENT, ERole.RELATIVE)
   @CreatedResponse()
   async createInstallment(
     @Body() dto: createInstallmentDto,
@@ -33,7 +34,7 @@ export class InstallmentController {
   }
 
   @Get()
-  @Auth(ERole.SCHOOL)
+  @Auth(ERole.PARENT, ERole.STUDENT, ERole.SCHOOL, ERole.RELATIVE)
   @Paginated()
   @PageResponse()
   @OkResponse()
@@ -48,5 +49,15 @@ export class InstallmentController {
       user,
     );
     return new GenericResponse("Installments retrived !", payload);
+  }
+
+  @Patch()
+  @Auth(ERole.SCHOOL)
+  @OkResponse()
+  async declineOrApproveInstallments(
+    @Body() dto: DeclineOrApproveInstallmentDto,
+  ) {
+    const payload = await this.installmentService.approveOrDecline(dto);
+    return new GenericResponse("Installment response !", payload);
   }
 }

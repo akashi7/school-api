@@ -24,6 +24,8 @@ import { GetUser } from "./decorators/get-user.decorator";
 import {
   AdminLoginDto,
   EmployeeLoginDto,
+  GoogleLoginDto,
+  GoogleSignupDto,
   ParentLoginDto,
   SchoolLoginDto,
   StudentLoginDto,
@@ -147,5 +149,52 @@ export class AuthController {
   ): Promise<GenericResponse<Partial<User>>> {
     const payload = await this.authService.getProfile(user);
     return new GenericResponse("Profile retrieved successfully", payload);
+  }
+
+  @Post("/login/google/student")
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  @HttpCode(HttpStatus.OK)
+  async studentGoogleLogin(
+    @Body() dto: GoogleLoginDto,
+  ): Promise<GenericResponse<{ refreshToken: string }>> {
+    const { accessToken, refreshToken, role } =
+      await this.authService.studentGoogleLogin(dto);
+    return new GenericResponse("Student logged in successfully", {
+      accessToken,
+      refreshToken,
+      role,
+    });
+  }
+  @Post("/login/relative")
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  @HttpCode(HttpStatus.OK)
+  async relativeSignUp(
+    @Body() dto: GoogleSignupDto,
+  ): Promise<GenericResponse<{ refreshToken: string }>> {
+    const { accessToken, refreshToken } = await this.authService.relativeSignup(
+      dto,
+    );
+    return new GenericResponse("Relative logged in successfully", {
+      accessToken,
+      refreshToken,
+    });
+  }
+
+  @Post("/login/user")
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  @HttpCode(HttpStatus.OK)
+  async userLogin(
+    @Body() dto: AdminLoginDto,
+  ): Promise<GenericResponse<{ refreshToken: string }>> {
+    const { accessToken, refreshToken, role } =
+      await this.authService.userLogin(dto);
+    return new GenericResponse("userlogged in successfully", {
+      accessToken,
+      refreshToken,
+      role,
+    });
   }
 }

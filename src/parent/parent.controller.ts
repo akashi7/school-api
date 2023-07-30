@@ -13,15 +13,16 @@ import { ParentService } from "./parent.service";
 export class ParentController {
   constructor(private readonly parentService: ParentService) {}
   @Get()
-  async findAll() {
-    const payload = await this.parentService.findAll();
+  @Auth(ERole.SCHOOL, ERole.ADMIN)
+  async findAll(@GetUser() user: User) {
+    const payload = await this.parentService.findAll(user);
     return new GenericResponse("Parents retrieved", payload);
   }
 
   @Get("children")
-  @Auth(ERole.PARENT)
+  @Auth(ERole.PARENT, ERole.RELATIVE)
   async getChildren(@GetUser() user: User) {
-    const payload = await this.parentService.getChildren(user.id);
+    const payload = await this.parentService.getChildren(user);
     return new GenericResponse("Children retrieved", payload);
   }
 

@@ -179,21 +179,21 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       // SEED EMPLOYEE
       if (
         !(await tx.user.count({
-          where: { role: ERole.EMPLOYEE, employeeEmail: "akashi@gmail.com" },
+          where: { role: ERole.EMPLOYEE, email: "akashi@gmail.com" },
         }))
       ) {
         await tx.user.create({
           data: {
             role: ERole.EMPLOYEE,
             employeeIdentifier: "EMP20220101",
-            employeeFullName: "Kabuto Christian",
+            fullName: "Kabuto Christian",
             address: "Kicukiro, Kigali",
-            employeeEmail: "akashi@gmail.com",
-            employeePassportPhoto:
+            email: "akashi@gmail.com",
+            passportPhoto:
               "https://st.depositphotos.com/2101611/4338/v/600/depositphotos_43381243-stock-illustration-male-avatar-profile-picture.jpg",
-            employeeDob: new Date("01-01-1998"),
-            employeeCountryName: "Rwanda",
-            employeeCountryCode: "RW",
+            dob: new Date("01-01-1998"),
+            countryName: "Rwanda",
+            countryCode: "RW",
             schoolId: this.schoolId,
           },
         });

@@ -1,16 +1,29 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ERole, User } from "@prisma/client";
+import { OAuth2Client } from "google-auth-library";
 import { PrismaService } from "../prisma.service";
 import {
   AdminLoginDto,
   EmployeeLoginDto,
+  GoogleLoginDto,
+  GoogleSignupDto,
   ParentLoginDto,
   SchoolLoginDto,
   StudentLoginDto,
 } from "./dto/login.dto";
 import { JwtPayload } from "./interfaces/jwt.payload.interface";
 import { PasswordEncryption } from "./utils/password-encrytion.util";
+
+const client = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+);
 
 @Injectable()
 export class AuthService {
@@ -78,6 +91,7 @@ export class AuthService {
       id: user.id,
       role: user.role,
       countryName: user.countryName,
+      schoolId: user.schoolId,
     });
     await this.prismaService.user.update({
       where: { id: user.id },
@@ -266,5 +280,115 @@ export class AuthService {
       id,
     });
     return { accessToken, refreshToken };
+  }
+
+  async studentGoogleLogin(dto: GoogleLoginDto) {
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: dto.token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const user = await this.prismaService.user.findFirst({
+        where: {
+          email: ticket.getPayload().email,
+        },
+      });
+      if (!user) throw new NotFoundException("User not found");
+      const { accessToken, refreshToken } = await this.generateTokens({
+        id: user.id,
+        role: user.role,
+        countryName: user.countryName,
+        schoolId: user?.schoolId,
+      });
+      await this.prismaService.user.update({
+        where: { id: user.id },
+        data: { refreshToken: refreshToken },
+      });
+
+      return {
+        accessToken,
+        refreshToken,
+        role: user.role,
+      };
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
+  }
+
+  async relativeSignup(dto: GoogleSignupDto) {
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: dto.token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const userExist = await this.prismaService.user.findFirst({
+        where: {
+          email: ticket.getPayload().email,
+          role: ERole.RELATIVE,
+        },
+      });
+      if (userExist) throw new ConflictException("relative arleady exists");
+
+      const user = await this.prismaService.user.create({
+        data: {
+          role: ERole.RELATIVE,
+          fullName: ticket.getPayload().name,
+          email: ticket.getPayload().email,
+        },
+      });
+
+      const { accessToken, refreshToken } = await this.generateTokens({
+        id: user.id,
+        role: user.role,
+        countryName: user.countryName,
+        schoolId: user?.schoolId,
+      });
+      await this.prismaService.user.update({
+        where: { id: user.id },
+        data: { refreshToken: refreshToken },
+      });
+
+      return {
+        accessToken,
+        refreshToken,
+        role: user.role,
+      };
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
+  }
+
+  async userLogin(dto: AdminLoginDto) {
+    const { email, password } = dto;
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        email,
+        deletedAt: { isSet: false },
+      },
+    });
+    if (!user)
+      throw new BadRequestException("The email or password is incorrect");
+    const isMatch = this.passwordEncryption.comparePassword(
+      password,
+      user.password,
+    );
+    if (!isMatch) {
+      throw new BadRequestException("The email or password is incorrect");
+    }
+    const { accessToken, refreshToken } = await this.generateTokens({
+      id: user.id,
+      role: user.role,
+      countryName: user.countryName,
+    });
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { refreshToken },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      role: user.role,
+    };
   }
 }

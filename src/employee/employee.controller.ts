@@ -41,7 +41,7 @@ export class EmployeeController {
   @Get()
   @Paginated()
   @PageResponse()
-  @Auth(ERole.SCHOOL)
+  @Auth(ERole.SCHOOL, ERole.ADMIN)
   async getEmployees(
     @Query() dto: EmployeeSearchDto,
     @PaginationParams() options: IPagination,

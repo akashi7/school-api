@@ -48,7 +48,7 @@ export class EmployeeService {
       });
       if (!school) throw new BadRequestException("School not found");
       const existingEmailEmployee = await tx.user.findFirst({
-        where: { email: dto.employeeEmail },
+        where: { email: dto.email },
       });
       if (existingEmailEmployee)
         throw new BadRequestException("Employee email already exists");
@@ -101,7 +101,7 @@ export class EmployeeService {
     if (dto.search) {
       whereConditions.OR = [
         {
-          employeeFullName: { contains: dto.search, mode: "insensitive" },
+          fullName: { contains: dto.search, mode: "insensitive" },
         },
         {
           employeeIdentifier: { contains: dto.search, mode: "insensitive" },
@@ -139,32 +139,43 @@ export class EmployeeService {
       };
     }
 
-    const result = await paginate<User, Prisma.UserFindManyArgs>(
-      this.prismaService.user,
-      {
+    let result: any;
+
+    if (!user.schoolId) {
+      result = await this.prismaService.user.findMany({
         where: {
-          schoolId: user.schoolId,
           role: ERole.EMPLOYEE,
-          ...whereConditions,
-          positionId: {
-            in: positionIds,
-          },
         },
-        include: {
-          employeeSalary: {
-            where: { ...employeeWhereInput },
-            select: {
-              name: true,
-              amount: true,
-              current: true,
+      });
+    } else {
+      result = await paginate<User, Prisma.UserFindManyArgs>(
+        this.prismaService.user,
+        {
+          where: {
+            schoolId: user.schoolId,
+            role: ERole.EMPLOYEE,
+            ...whereConditions,
+            positionId: {
+              in: positionIds,
             },
           },
-          Position: true,
+          include: {
+            employeeSalary: {
+              where: { ...employeeWhereInput },
+              select: {
+                name: true,
+                amount: true,
+                current: true,
+              },
+            },
+            Position: true,
+          },
         },
-      },
-      +page,
-      +size,
-    );
+        +page,
+        +size,
+      );
+    }
+
     return result;
   }
 
@@ -205,9 +216,9 @@ export class EmployeeService {
    */
   async update(employeeId: string, dto: UpdateEmployeeDto, user: User) {
     await this.findOne(employeeId, user);
-    if (dto.employeeEmail) {
+    if (dto.email) {
       const existingEmailEmployee = await this.prismaService.user.findFirst({
-        where: { id: { not: employeeId }, email: dto.employeeEmail },
+        where: { id: { not: employeeId }, email: dto.email },
       });
       if (existingEmailEmployee)
         throw new BadRequestException("Email already exists");

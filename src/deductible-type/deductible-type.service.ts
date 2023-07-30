@@ -146,7 +146,7 @@ export class DeductibleTypeService {
         const row = worksheet.addRow({}); // Add a new row
 
         row.getCell("A").value = rowNumber - 1; // No
-        row.getCell("B").value = employee.employeeFullName; // Name
+        row.getCell("B").value = employee.fullName; // Name
         row.getCell("C").value = employeeSalary.name; // Salary Name
         row.getCell("D").value = employeeSalary.amount || 0; // Salary Amount
 
@@ -183,9 +183,7 @@ export class DeductibleTypeService {
     let filename = "EMPLOYEES PAYROLL";
     if (dto.id && employees.length > 0) {
       // Generate filename based on employee full names
-      const employeeNames = employees.map(
-        (employee) => employee.employeeFullName,
-      );
+      const employeeNames = employees.map((employee) => employee.fullName);
       filename = `${employeeNames.join("_")}_PAYROLL`;
     }
 
