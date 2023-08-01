@@ -110,7 +110,11 @@ export class MessageService {
     if (!user.schoolId) {
       messages = await paginate<Messages, Prisma.MessagesFindManyArgs>(
         this.prismaService.messages,
-        {},
+        {
+          where: {
+            schoolId: null,
+          },
+        },
         +page,
         +size,
       );
