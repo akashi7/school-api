@@ -241,6 +241,7 @@ model Stream {
   classroomId       String?            @db.ObjectId
   studentPromotions StudentPromotion[]
   students          User[]
+  Messages          Messages[]
 }
 
 // TODO Review this model
@@ -400,5 +401,7 @@ model Messages {
   message     String?
   subject     String?
   schoolId    String?    @db.ObjectId
+  stream      Stream?    @relation(fields: [streamId], references: [id])
+  streamId    String?    @db.ObjectId
   school      School?    @relation(fields: [schoolId], references: [id])
 }

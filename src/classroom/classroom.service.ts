@@ -5,6 +5,7 @@ import {
 } from "@nestjs/common";
 import { Classroom, Prisma, Stream, User } from "@prisma/client";
 import { Workbook } from "exceljs";
+import * as path from "path";
 import { PaginationDto } from "../__shared__/dto/pagination.dto";
 import { paginate } from "../__shared__/utils/pagination.util";
 import { PrismaService } from "../prisma.service";
@@ -263,14 +264,46 @@ export class ClassroomService {
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet("students lists in a stream");
 
+    const image = path.join(__dirname, "../../images/logo.png");
+
+    const imageId = workbook.addImage({
+      filename: image,
+      extension: "png",
+    });
+
+    worksheet.addImage(imageId, {
+      tl: { col: 1, row: 0 },
+      ext: { width: 200, height: 100 },
+    });
+
+    worksheet.getRow(1).height = 120;
+
+    const imageCol = 1;
+    const imageRow = 1;
+
+    const imageCell = worksheet.getCell(imageRow, imageCol);
+    imageCell.alignment = { horizontal: "center", vertical: "middle" };
+
+    const imageWidth = 30;
+    const numMergedCols = Math.ceil(imageWidth / 10);
+
+    worksheet.mergeCells(
+      imageRow,
+      imageCol,
+      imageRow,
+      imageCol + numMergedCols - 1,
+    );
+
+    for (let col = imageCol; col < imageCol + numMergedCols; col++) {
+      worksheet.getColumn(col).width = imageWidth / numMergedCols;
+    }
+
     const currentAcademicYearId =
       await this.prismaService.academicYear.findFirst({
         where: {
           current: true,
         },
       });
-
-    // Fetch stream
 
     const streams = await this.prismaService.stream.findFirst({
       where: {
@@ -294,13 +327,30 @@ export class ClassroomService {
 
     const studentPromotions = streams?.studentPromotions || [];
 
+    const titleRow = worksheet.addRow([streams?.name, ""]);
+    titleRow.getCell(1).font = { bold: true };
+    titleRow.getCell(1).alignment = {
+      horizontal: "left",
+      vertical: "middle",
+    };
+
+    worksheet.mergeCells(
+      titleRow.number,
+      1,
+      titleRow.number,
+      1 + numMergedCols,
+    );
+    titleRow.height = 50;
+
     worksheet.addRow(["No", "Name", "Student id"]);
+    const firstColumn = worksheet.getColumn(1);
     const nameColumn = worksheet.getColumn(2);
     const studentColumn = worksheet.getColumn(3);
+    firstColumn.width = 20;
     nameColumn.width = 30;
     studentColumn.width = 35;
 
-    const headerRow = worksheet.getRow(1);
+    const headerRow = worksheet.getRow(3);
     headerRow.font = { bold: true };
 
     let rowNumber = 0;
@@ -323,5 +373,35 @@ export class ClassroomService {
       workbook,
       filename,
     };
+  }
+
+  async pdfClassList(user: User, dto: DownloadClassExcelDto) {
+    const currentAcademicYearId =
+      await this.prismaService.academicYear.findFirst({
+        where: {
+          current: true,
+        },
+      });
+
+    const streams = await this.prismaService.stream.findFirst({
+      where: {
+        id: dto.id,
+        studentPromotions: {
+          some: {
+            academicYearId: dto.academicYearId
+              ? dto.academicYearId
+              : currentAcademicYearId.id,
+          },
+        },
+      },
+      include: {
+        studentPromotions: {
+          include: {
+            student: true,
+          },
+        },
+      },
+    });
+    return streams;
   }
 }

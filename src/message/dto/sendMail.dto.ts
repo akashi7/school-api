@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { ERole, Emessage } from "@prisma/client";
 import { IsArray, IsEnum, IsOptional, IsString } from "class-validator";
 export class sendMailDto {
@@ -15,4 +15,7 @@ export class sendMailDto {
   content: string;
   @IsString()
   subject: string;
+  @IsOptional()
+  @ApiPropertyOptional({ isArray: true })
+  streamIds?: string[];
 }

@@ -356,16 +356,24 @@ export class FeeService {
   async downloadFeesByStudents(dto: DownloadFeesByStudentsDto, user: User) {
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet("Fees Report");
+
+    let totalTerm1 = 0;
+    let totalTerm2 = 0;
+    let totalTerm3 = 0;
+
     worksheet.columns = [
       { header: "No", key: "no" },
-      { header: "NAME", key: "name" },
-      { header: "1st TERM", key: "term1" },
-      { header: "1st TERM BAL", key: "term1Bal" },
-      { header: "2nd TERM", key: "term2" },
-      { header: "2nd TERM BAL", key: "term2Bal" },
-      { header: "3rd TERM", key: "term3" },
-      { header: "3rd TERM BAL", key: "term3Bal" },
+      { header: "NAME", key: "name", width: 28 },
+      { header: "1st TERM", key: "term1", width: 28 },
+      { header: "1st TERM BAL", key: "term1Bal", width: 28 },
+      { header: "2nd TERM", key: "term2", width: 28 },
+      { header: "2nd TERM BAL", key: "term2Bal", width: 28 },
+      { header: "3rd TERM", key: "term3", width: 28 },
+      { header: "3rd TERM BAL", key: "term3Bal", width: 28 },
     ];
+
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true };
 
     const academicYear = await this.prismaService.academicYear.findFirst({
       where: { id: dto.academicYearId },
@@ -403,6 +411,18 @@ export class FeeService {
         },
       });
 
+      totalTerm1 += fees
+        .filter((fee) => fee.academicTerms.includes(EAcademicTerm.TERM1))
+        .reduce((a, fee) => a + fee.amount, 0);
+
+      totalTerm2 += fees
+        .filter((fee) => fee.academicTerms.includes(EAcademicTerm.TERM2))
+        .reduce((a, fee) => a + fee.amount, 0);
+
+      totalTerm3 += fees
+        .filter((fee) => fee.academicTerms.includes(EAcademicTerm.TERM3))
+        .reduce((a, fee) => a + fee.amount, 0);
+
       worksheet.addRow({
         no: i + 1,
         name: studentPromotion.student.fullName,
@@ -420,6 +440,17 @@ export class FeeService {
         term3Bal: 0, // TODO: Revisit this after working on payments,
       });
     }
+    worksheet.addRow({
+      no: "Total",
+      name: "Total", // Leave this cell blank for the total row
+      term1: totalTerm1,
+      term2: totalTerm2,
+      term3: totalTerm3,
+    });
+
+    const lastRow = worksheet.lastRow;
+
+    lastRow.font = { bold: true };
     return {
       workbook,
       filename: `FEES_CLEARANCE_REPORT_${stream.classroom.name}_${stream.name}`,

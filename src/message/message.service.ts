@@ -59,13 +59,40 @@ export class MessageService {
   }
 
   async SendMail(dto: sendMailDto, User: User) {
-    const users = await this.prismaService.user.findMany({
+    const academicYear = await this.prismaService.academicYear.findFirst({
       where: {
-        role: {
-          in: dto.to,
-        },
+        current: true,
       },
     });
+
+    let users: any[];
+
+    if (dto.streamIds && dto.streamIds.length > 0) {
+      const students = await this.prismaService.studentPromotion.findMany({
+        where: {
+          streamId: {
+            in: dto.streamIds,
+          },
+          academicYearId: academicYear.id,
+        },
+        include: {
+          student: true,
+        },
+      });
+      users = students.map(
+        (studentPromotion) => studentPromotion.student.email,
+      );
+    }
+    if (!dto.streamIds && dto.streamIds.length === 0) {
+      const allUsers = await this.prismaService.user.findMany({
+        where: {
+          role: {
+            in: dto.to,
+          },
+        },
+      });
+      users = allUsers;
+    }
 
     const emailPromises = users
       .filter((user) => user.email && dto.messageType.includes("EMAIL"))
@@ -87,7 +114,6 @@ export class MessageService {
 
     await Promise.all(emailPromises);
 
-    // Now create the messages entry only once after sending all emails.
     try {
       await this.prismaService.messages.create({
         data: {

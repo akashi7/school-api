@@ -48,7 +48,6 @@ export class InstallmentService {
         throw new NotFoundException("Fee not found");
       }
 
-      console.log({ fee: fees?.academicTerms }, { dto: dto.academicTerm });
       if (fees?.academicTerms.indexOf(dto.academicTerm) === -1) {
         throw new NotFoundException("Term not included for this fee");
       }

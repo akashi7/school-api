@@ -34,23 +34,22 @@ export class StudentService {
     { page, size }: IPagination,
     user: User,
   ) {
-    console.log({ user });
     const whereConditions: Prisma.UserWhereInput = {};
     const studentPromotionWhereInput: Prisma.StudentPromotionWhereInput = {};
     if (dto.academicYearId) {
       whereConditions.academicYearId = dto.academicYearId;
     }
-    // whereConditions.studentPromotions = {
-    //   some: {
-    //     academicYearId: dto.academicYearId,
-    //   },
-    // };
+    whereConditions.studentPromotions = {
+      some: {
+        academicYearId: dto.academicYearId,
+      },
+    };
     if (dto.classroomId)
       whereConditions.stream = {
         classroomId: dto.classroomId,
       };
     if (dto.streamId) {
-      // studentPromotionWhereInput.streamId = dto.streamId;
+      studentPromotionWhereInput.streamId = dto.streamId;
       whereConditions.streamId = dto.streamId;
     }
     if (dto.search) {
@@ -333,7 +332,7 @@ export class StudentService {
         await tx.studentPromotion.create({
           data: {
             studentId,
-            // academicYearId: dto.academicYearId,
+            academicYearId: dto.academicYearId,
             streamId: dto.streamId,
           },
         });

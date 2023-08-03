@@ -24,10 +24,10 @@ import { GetUser } from "../auth/decorators/get-user.decorator";
 import { ClassroomService } from "./classroom.service";
 import { CreateClassroomDto } from "./dto/create-classroom.dto";
 import { CreateStreamDto } from "./dto/create-stream.dto";
+import { DownloadClassExcelDto } from "./dto/download.dto";
 import { FindClassroomsDto } from "./dto/find-classrooms.dto";
 import { UpdateClassroomDto } from "./dto/update-classroom.dto";
 import { UpdateStreamDto } from "./dto/update-stream.dto";
-import { DownloadClassExcelDto } from "./dto/download.dto";
 
 @Controller("classrooms")
 @Auth(ERole.SCHOOL)
@@ -174,15 +174,13 @@ export class ClassroomController {
     workbook.xlsx.write(res).then(() => res.end());
   }
 
-  // @Auth(ERole.SCHOOL)
-  // @Get("download/files/pdf")
-  // async downloadPdfClassrooms(
-  //   @GetUser() user: User,
-  //   @Res() res: Response,
-  //   @Query("id") id?: string,
-  // ) {
-  //   const { workbook, filename } =
-  //     await this.classroomService.downloadClassList(user, id);
-  //   return;
-  // }
+  @Auth(ERole.SCHOOL)
+  @Get("class/pdf")
+  async downloadPdfClassrooms(
+    @GetUser() user: User,
+    @Query() dto: DownloadClassExcelDto,
+  ) {
+    const result = await this.classroomService.pdfClassList(user, dto);
+    return new GenericResponse("Stream student", result);
+  }
 }
