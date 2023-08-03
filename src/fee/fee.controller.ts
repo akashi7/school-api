@@ -41,7 +41,7 @@ export class FeeController {
 
   @Get()
   @PageResponse()
-  @Auth(ERole.SCHOOL, ERole.PARENT, ERole.RELATIVE, ERole.STUDENT)
+  @Auth(ERole.SCHOOL, ERole.PARENT, ERole.RELATIVE, ERole.STUDENT, ERole.ADMIN)
   async findAll(
     @Query() paginationDto: PaginationDto,
     @Query() findDto: FindFeesDto,

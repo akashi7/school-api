@@ -85,20 +85,36 @@ export class FeeService {
     findDto: FindFeesDto,
     user: User,
   ) {
-    const whereConditions = this.getFeesWhereConditions(findDto, user);
-    const payload = await paginate<Fee, Prisma.FeeFindManyArgs>(
-      this.prismaService.fee,
-      {
-        where: { ...whereConditions },
-        include: {
-          classrooms: { select: { id: true, name: true } },
-          academicYear: { select: { id: true, name: true } },
+    let payload: any;
+    if (user.role === ERole.ADMIN) {
+      payload = await paginate<Fee, Prisma.FeeFindManyArgs>(
+        this.prismaService.fee,
+        {
+          include: {
+            classrooms: { select: { id: true, name: true } },
+            academicYear: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: "desc" },
         },
-        orderBy: { createdAt: "desc" },
-      },
-      +page,
-      +size,
-    );
+        +page,
+        +size,
+      );
+    } else {
+      const whereConditions = this.getFeesWhereConditions(findDto, user);
+      payload = await paginate<Fee, Prisma.FeeFindManyArgs>(
+        this.prismaService.fee,
+        {
+          where: { ...whereConditions },
+          include: {
+            classrooms: { select: { id: true, name: true } },
+            academicYear: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        +page,
+        +size,
+      );
+    }
     return payload;
   }
 
@@ -442,7 +458,7 @@ export class FeeService {
     }
     worksheet.addRow({
       no: "Total",
-      name: "Total", // Leave this cell blank for the total row
+      name: "Total",
       term1: totalTerm1,
       term2: totalTerm2,
       term3: totalTerm3,
