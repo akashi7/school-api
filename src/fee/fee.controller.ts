@@ -68,6 +68,15 @@ export class FeeController {
     workbook.xlsx.write(res).then(() => res.end());
   }
 
+  @Get("classrooms/pdf/download")
+  async downloadPdfFeesByClassrooms(
+    @Query() dto: DownloadFeesByClassroomsDto,
+    @GetUser() user: User,
+  ) {
+    const payload = await this.feeService.downloadPdfFeesClassrooms(dto, user);
+    return new GenericResponse("Data retrieved", payload);
+  }
+
   @Get("students/download")
   async downloadFeesByStudents(
     @Query() dto: DownloadFeesByStudentsDto,

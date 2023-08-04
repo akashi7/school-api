@@ -126,7 +126,18 @@ export class FeeService {
    */
   private getFeesWhereConditions(findDto: FindFeesDto, user: User) {
     let schoolId: string;
-    if (!user.schoolId) {
+    if (user.role === ERole.RELATIVE) {
+      (async () => {
+        const children = await this.prismaService.user.findFirst({
+          where: {
+            role: ERole.STUDENT,
+            relativeId: user.id,
+          },
+        });
+        schoolId = children.schoolId;
+      })();
+    }
+    if (user.role === ERole.PARENT) {
       (async () => {
         const children = await this.prismaService.user.findFirst({
           where: {
@@ -321,13 +332,22 @@ export class FeeService {
   async downloadFeesByClassrooms(dto: DownloadFeesByClassroomsDto, user: User) {
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet("Fees Report");
+
+    let totalPaidAmount = 0;
+    let remainingBalance = 0;
+    let paidAmount = 0;
+    let totalRemainingBalance = 0;
     worksheet.columns = [
       { header: "No", key: "no" },
-      { header: "CLASS", key: "class" },
-      { header: "FEES/STUDENT", key: "feesPerStudent" },
-      { header: "PAID AMOUNT", key: "paidAmount" },
-      { header: "REMAINING BALANCE", key: "remainingBalance" },
+      { header: "CLASS", key: "class", width: 28 },
+      { header: "FEES/STUDENT", key: "feesPerStudent", width: 28 },
+      { header: "PAID AMOUNT", key: "paidAmount", width: 28 },
+      { header: "REMAINING BALANCE", key: "remainingBalance", width: 28 },
     ];
+
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true };
+
     const streams = await this.prismaService.stream.findMany({
       where: {
         classroom: { schoolId: user.schoolId },
@@ -340,6 +360,14 @@ export class FeeService {
     if (!academicYear) throw new NotFoundException("Academic year not found");
     // Add the data rows
     for (const [i, stream] of streams.entries()) {
+      const fees = await this.prismaService.fee.findMany({
+        where: {
+          classroomIDs: { has: stream.classroomId },
+          academicYearId: dto.academicYearId,
+          academicTerms: { has: dto.term },
+          optional: false,
+        },
+      });
       const feesPerStudent = (
         await this.prismaService.fee.findMany({
           where: {
@@ -350,14 +378,43 @@ export class FeeService {
           },
         })
       ).reduce((a, fee) => a + fee.amount, 0);
+
+      for (const fee of fees) {
+        const payments = await this.prismaService.payment.findMany({
+          where: {
+            feeId: fee.id,
+          },
+        });
+
+        paidAmount = payments.reduce(
+          (total, payment) => total + payment.amount,
+          0,
+        );
+        remainingBalance = fee.amount - paidAmount;
+
+        totalPaidAmount += paidAmount;
+        totalRemainingBalance += remainingBalance;
+      }
+
       worksheet.addRow({
         no: i + 1,
         class: `${stream.classroom.name} ${stream.name}`,
         feesPerStudent,
-        paidAmount: 0, // TODO: REVISIT THIS AFTER WORKING ON PAYMENTS
-        remainingBalance: 0, // TODO: REVISIT THIS AFTER WORKING ON PAYMENTS
+        paidAmount: paidAmount, // TODO: REVISIT THIS AFTER WORKING ON PAYMENTS
+        remainingBalance, // TODO: REVISIT THIS AFTER WORKING ON PAYMENTS
       });
     }
+
+    worksheet.addRow({
+      no: "Total",
+      name: "Total",
+      paidAmount: totalPaidAmount,
+      remainingBalance: totalRemainingBalance,
+    });
+
+    const lastRow = worksheet.lastRow;
+
+    lastRow.font = { bold: true };
     return {
       workbook,
       filename: `FEES_CLEARANCE_REPORT_${dto.term}_${academicYear.name}`,
@@ -471,5 +528,72 @@ export class FeeService {
       workbook,
       filename: `FEES_CLEARANCE_REPORT_${stream.classroom.name}_${stream.name}`,
     };
+  }
+
+  async downloadPdfFeesClassrooms(
+    dto: DownloadFeesByClassroomsDto,
+    user: User,
+  ) {
+    const streamsData = []; // Array to hold data for each stream
+
+    let totalPaidAmount = 0;
+    let totalRemainingBalance = 0;
+
+    const streams = await this.prismaService.stream.findMany({
+      where: {
+        classroom: { schoolId: user.schoolId },
+      },
+      include: { classroom: { select: { name: true } } },
+    });
+    const academicYear = await this.prismaService.academicYear.findFirst({
+      where: { id: dto.academicYearId },
+    });
+    if (!academicYear) throw new NotFoundException("Academic year not found");
+
+    for (const [i, stream] of streams.entries()) {
+      const fees = await this.prismaService.fee.findMany({
+        where: {
+          classroomIDs: { has: stream.classroomId },
+          academicYearId: dto.academicYearId,
+          academicTerms: { has: dto.term },
+          optional: false,
+        },
+      });
+      const feesPerStudent = fees.reduce((a, fee) => a + fee.amount, 0);
+
+      let paidAmount = 0;
+      let remainingBalance = 0;
+
+      for (const fee of fees) {
+        const payments = await this.prismaService.payment.findMany({
+          where: {
+            feeId: fee.id,
+          },
+        });
+
+        paidAmount = payments.reduce(
+          (total, payment) => total + payment.amount,
+          0,
+        );
+        totalPaidAmount = totalPaidAmount + paidAmount;
+        remainingBalance = fee.amount - paidAmount;
+        totalRemainingBalance = totalRemainingBalance + remainingBalance;
+      }
+
+      streamsData.push({
+        streamName: `${stream.classroom.name} ${stream.name}`,
+        feesPerStudent,
+        paidAmount,
+        remainingBalance,
+      });
+    }
+
+    const total = {
+      total: `Total`,
+      totalPaidAmount,
+      totalRemainingBalance,
+    };
+
+    return { streamsData, total };
   }
 }

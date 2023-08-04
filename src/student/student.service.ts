@@ -244,11 +244,17 @@ export class StudentService {
               role: ERole.STUDENT,
               schoolId: user.schoolId,
             }
-          : user.role === ERole.PARENT || user.role === ERole.RELATIVE
+          : user.role === ERole.PARENT
           ? {
               id,
               role: ERole.STUDENT,
               parentId: user.id,
+            }
+          : user.role === ERole.RELATIVE
+          ? {
+              id,
+              role: ERole.STUDENT,
+              relativeId: user.id,
             }
           : {
               id: user.id,

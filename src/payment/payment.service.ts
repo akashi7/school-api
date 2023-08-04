@@ -845,6 +845,11 @@ export class PaymentService {
                 ? { id, schoolId: user.schoolId }
                 : user.role === ERole.STUDENT
                 ? { id: user.id }
+                : user.role === ERole.RELATIVE
+                ? {
+                    id,
+                    relativeId: user.id,
+                  }
                 : { id, parentId: user.id },
             academicYearId: dto.academicYearId,
             academicTerm: dto.academicTerm,

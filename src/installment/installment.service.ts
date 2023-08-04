@@ -132,7 +132,17 @@ export class InstallmentService {
   ) {
     let schoolId: string;
 
-    if (!user.schoolId) {
+    if (user.role === ERole.RELATIVE) {
+      const children = await this.prismaService.user.findFirst({
+        where: {
+          role: ERole.STUDENT,
+          relativeId: user.id,
+        },
+      });
+      schoolId = children.schoolId;
+    }
+
+    if (user.role === ERole.PARENT) {
       const children = await this.prismaService.user.findFirst({
         where: {
           role: ERole.STUDENT,
