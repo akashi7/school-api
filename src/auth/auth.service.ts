@@ -324,10 +324,10 @@ export class AuthService {
       const userExist = await this.prismaService.user.findFirst({
         where: {
           email: ticket.getPayload().email,
-          role: ERole.RELATIVE,
         },
       });
-      if (userExist) throw new ConflictException("relative arleady exists");
+      if (userExist)
+        throw new ConflictException("user arleady exists with email");
 
       const user = await this.prismaService.user.create({
         data: {
