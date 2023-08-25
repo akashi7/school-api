@@ -5,13 +5,15 @@ import { Injectable } from "@nestjs/common";
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
   async sendMail(to: string, subject: string, from: string, text: string) {
-    const emailSent = await this.mailerService.sendMail({
-      to,
-      from,
-      subject,
-      text,
-    });
-    if (emailSent) return { message: "Email sent successfully" };
-    else return { message: "Email Not sent" };
+    try {
+      await this.mailerService.sendMail({
+        to,
+        from,
+        subject,
+        text,
+      });
+    } catch (error) {
+      console.log({ error });
+    }
   }
 }

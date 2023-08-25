@@ -9,6 +9,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { EPaymentMethod, ERole, Payment, Prisma, User } from "@prisma/client";
 import { Buffer } from "buffer";
+import { endOfDay, startOfDay } from "date-fns";
 import { Request } from "express";
 import { catchError, lastValueFrom } from "rxjs";
 import { IPagination } from "src/__shared__/interfaces/pagination.interface";
@@ -815,6 +816,46 @@ export class PaymentService {
   ) {
     let result: any;
 
+    const whereClause: Prisma.PaymentWhereInput = {};
+
+    if (dto.from && dto.to) {
+      const start = new Date(dto.from);
+      const end = new Date(dto.to);
+      whereClause.AND = [
+        { createdAt: { gte: startOfDay(start) } },
+        { createdAt: { lte: endOfDay(end) } },
+      ];
+    }
+
+    let children: User;
+
+    if (user.role === ERole.PARENT) {
+      children = await this.prismaService.user.findFirst({
+        where: {
+          role: ERole.STUDENT,
+          parentId: user.id,
+        },
+      });
+    }
+    if (user.role === ERole.RELATIVE) {
+      children = await this.prismaService.user.findFirst({
+        where: {
+          role: ERole.STUDENT,
+          relativeId: user.id,
+        },
+      });
+    }
+
+    const school = await this.prismaService.user.findFirst({
+      where: {
+        role: ERole.SCHOOL,
+        schoolId: children.schoolId,
+      },
+      include: {
+        school: true,
+      },
+    });
+
     if (user.role === ERole.ADMIN) {
       result = await paginate<Payment, Prisma.PaymentFindManyArgs>(
         this.prismaService.payment,
@@ -853,6 +894,7 @@ export class PaymentService {
                 : { id, parentId: user.id },
             academicYearId: dto.academicYearId,
             academicTerm: dto.academicTerm,
+            ...whereClause,
           },
           include: {
             fee: true,
@@ -866,8 +908,10 @@ export class PaymentService {
         +size,
       );
     }
-
-    return result;
+    if (user.role === ERole.ADMIN) {
+      return result;
+    }
+    return { result, school };
   }
   async findAllPaymentsMade(
     dto: FindAllPaymentsDto,
@@ -890,8 +934,22 @@ export class PaymentService {
 
     if (dto.studentIdentifier) {
       whereClause.student = {
-        studentIdentifier: dto.studentIdentifier,
+        OR: [
+          { studentIdentifier: dto.studentIdentifier },
+          {
+            fullName: { contains: dto.studentIdentifier, mode: "insensitive" },
+          },
+        ],
       };
+    }
+
+    if (dto.from && dto.to) {
+      const start = new Date(dto.from);
+      const end = new Date(dto.to);
+      whereClause.AND = [
+        { createdAt: { gte: startOfDay(start) } },
+        { createdAt: { lte: endOfDay(end) } },
+      ];
     }
 
     const result = await paginate<Payment, Prisma.PaymentFindManyArgs>(

@@ -23,6 +23,12 @@ export class FindPaymentsByStudentDto {
   @ApiProperty({ enum: EAcademicTerm })
   @IsEnum(EAcademicTerm)
   academicTerm: EAcademicTerm;
+  @OptionalProperty()
+  @IsString()
+  from?: Date;
+  @OptionalProperty()
+  @IsString()
+  to?: Date;
 }
 
 export class FindAllPaymentsDto {
@@ -32,6 +38,10 @@ export class FindAllPaymentsDto {
   academicTerm?: EAcademicTerm;
   @OptionalProperty()
   studentIdentifier?: string;
+  @OptionalProperty()
+  from?: Date;
+  @OptionalProperty()
+  to?: Date;
 }
 
 export class FindFeesDto {

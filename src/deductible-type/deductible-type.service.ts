@@ -91,14 +91,12 @@ export class DeductibleTypeService {
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet("Payroll Report");
 
-    // Fetch deductible types
     const deductibleTypes = await this.prismaService.deductibleTypes.findMany({
       where: {
         schoolId: user.schoolId,
       },
     });
 
-    // Define columns
     const columns = [
       { header: "No", key: "no", width: 5 },
       { header: "NAME", key: "name", width: 20 },
@@ -106,7 +104,6 @@ export class DeductibleTypeService {
       { header: "GROSS", key: "amount", width: 10 },
     ];
 
-    // Add deductible type columns
     for (const deductibleType of deductibleTypes) {
       columns.push({
         header: deductibleType.name || "",
@@ -124,31 +121,28 @@ export class DeductibleTypeService {
 
     worksheet.columns = columns;
 
-    // Apply bold style to title row
     const titleRow = worksheet.getRow(1);
     titleRow.font = { bold: true };
 
-    // Fetch employees with their salary information
     const employees = await this.prismaService.user.findMany({
       where: {
         schoolId: user.schoolId,
         ...(dto.id && { id: dto.id }),
       },
       include: {
-        employeeSalary: true, // Include the related employee salary records
+        employeeSalary: true,
       },
     });
 
-    // Populate the worksheet with employee data and deductible details
-    let rowNumber = 2; // Start from row 2 to leave room for headers
+    let rowNumber = 2;
     for (const employee of employees) {
       for (const employeeSalary of employee.employeeSalary) {
-        const row = worksheet.addRow({}); // Add a new row
+        const row = worksheet.addRow({});
 
-        row.getCell("A").value = rowNumber - 1; // No
-        row.getCell("B").value = employee.fullName; // Name
-        row.getCell("C").value = employeeSalary.name; // Salary Name
-        row.getCell("D").value = employeeSalary.amount || 0; // Salary Amount
+        row.getCell("A").value = rowNumber - 1;
+        row.getCell("B").value = employee.fullName;
+        row.getCell("C").value = employeeSalary.name;
+        row.getCell("D").value = employeeSalary.amount || 0;
 
         let deductedAmount = 0;
 
@@ -173,8 +167,8 @@ export class DeductibleTypeService {
         }
 
         const netAmount = (employeeSalary.amount || 0) - deductedAmount;
-        row.getCell(columns[columns.length - 2].key).value = deductedAmount; // Deducted Amount
-        row.getCell(columns[columns.length - 1].key).value = netAmount; // Net Amount
+        row.getCell(columns[columns.length - 2].key).value = deductedAmount;
+        row.getCell(columns[columns.length - 1].key).value = netAmount;
 
         rowNumber++;
       }

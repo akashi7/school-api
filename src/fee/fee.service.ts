@@ -534,7 +534,7 @@ export class FeeService {
     dto: DownloadFeesByClassroomsDto,
     user: User,
   ) {
-    const streamsData = []; // Array to hold data for each stream
+    const streamsData = [];
 
     let totalPaidAmount = 0;
     let totalRemainingBalance = 0;

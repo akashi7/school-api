@@ -23,10 +23,13 @@ import { Auth } from "./decorators/auth.decorator";
 import { GetUser } from "./decorators/get-user.decorator";
 import {
   AdminLoginDto,
+  ChangePasswordDto,
+  CheckCodeDto,
   EmployeeLoginDto,
   GoogleLoginDto,
   GoogleSignupDto,
   ParentLoginDto,
+  ResetPasswordDto,
   SchoolLoginDto,
   StudentLoginDto,
 } from "./dto/login.dto";
@@ -192,6 +195,38 @@ export class AuthController {
     const { accessToken, refreshToken, role } =
       await this.authService.userLogin(dto);
     return new GenericResponse("userlogged in successfully", {
+      accessToken,
+      refreshToken,
+      role,
+    });
+  }
+
+  @Post("/login/reset-password")
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  @HttpCode(HttpStatus.OK)
+  async userResetPassword(@Body() dto: ResetPasswordDto) {
+    const { id } = await this.authService.userForgotPassword(dto);
+    return new GenericResponse("Reset code sent to email", { id });
+  }
+
+  @Post("/login/check-code")
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  @HttpCode(HttpStatus.OK)
+  async checkUserCode(@Body() dto: CheckCodeDto) {
+    await this.authService.checkCode(dto);
+    return new GenericResponse("Code checked successfully", {});
+  }
+
+  @Post("/login/change-password")
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  @HttpCode(HttpStatus.OK)
+  async ChangeUserPassword(@Body() dto: ChangePasswordDto) {
+    const { accessToken, refreshToken, role } =
+      await this.authService.ResetPassword(dto);
+    return new GenericResponse("Password changed successfully", {
       accessToken,
       refreshToken,
       role,

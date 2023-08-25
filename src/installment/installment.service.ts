@@ -111,10 +111,10 @@ export class InstallmentService {
         },
       });
 
-      // const message = await this.messageService.createMessage("0781273704");
-      // if (message) {
-      //   console.log("sent");
-      // }
+      const message = await this.messageService.createMessage("0781273704");
+      if (message) {
+        console.log("sent");
+      }
 
       return installment;
     });
@@ -233,13 +233,7 @@ export class InstallmentService {
         `${installment?.student?.email}`,
         "Installment notification",
         "no-reply@schoolnestpay.com",
-        `
-         Hello ${installment?.student?.fullName},
-
-         we are informing you that your installment has been ${dto.status}
-         visit your dashboard for more information
-        
-        `,
+        `Hello ${installment?.student?.fullName}, we are informing you that your installment has been ${dto.status} visit your dashboard for more information`,
       );
     } catch (error) {
       console.log({ error });

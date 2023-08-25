@@ -46,3 +46,22 @@ export class GoogleSignupDto {
   @IsString()
   token: string;
 }
+
+export class ResetPasswordDto {
+  @IsString()
+  email: string;
+}
+
+export class CheckCodeDto {
+  @IsString()
+  code: string;
+  @IsString()
+  userId: string;
+}
+
+export class ChangePasswordDto {
+  @IsString()
+  password: string;
+  @IsString()
+  userId: string;
+}

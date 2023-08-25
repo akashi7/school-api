@@ -7,13 +7,17 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { ERole, User } from "@prisma/client";
 import { OAuth2Client } from "google-auth-library";
+import { MailService } from "src/mail/mail.service";
 import { PrismaService } from "../prisma.service";
 import {
   AdminLoginDto,
+  ChangePasswordDto,
+  CheckCodeDto,
   EmployeeLoginDto,
   GoogleLoginDto,
   GoogleSignupDto,
   ParentLoginDto,
+  ResetPasswordDto,
   SchoolLoginDto,
   StudentLoginDto,
 } from "./dto/login.dto";
@@ -31,6 +35,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly passwordEncryption: PasswordEncryption,
     private readonly prismaService: PrismaService,
+    private readonly mailService: MailService,
   ) {}
   /**
    * Login the admin
@@ -375,6 +380,96 @@ export class AuthService {
     if (!isMatch) {
       throw new BadRequestException("The email or password is incorrect");
     }
+    const { accessToken, refreshToken } = await this.generateTokens({
+      id: user.id,
+      role: user.role,
+      countryName: user.countryName,
+    });
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { refreshToken },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      role: user.role,
+    };
+  }
+
+  async userForgotPassword(dto: ResetPasswordDto) {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        email: dto.email,
+      },
+    });
+    if (!user) throw new NotFoundException("User with email not found");
+    const code = this.makeCode(5);
+    await this.prismaService.codePin.create({
+      data: {
+        code,
+        userId: user.id,
+      },
+    });
+    try {
+      this.mailService.sendMail(
+        `${user?.email}`,
+        `Reset password`,
+        "no-reply@schoolnestpay.com",
+        `Dear ${user?.fullName}, use this code : ${code}  while reseting your password and mind you that it expires in 5 minutes`,
+      );
+      const { id } = user;
+      return { id };
+    } catch (error) {
+      console.log({ error });
+    }
+  }
+
+  makeCode(length: number) {
+    let result = "";
+    const characters =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+  }
+
+  async checkCode(dto: CheckCodeDto) {
+    const Code = await this.prismaService.codePin.findFirst({
+      where: {
+        AND: [
+          { code: dto.code },
+          { userId: dto.userId },
+          { createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) } },
+        ],
+      },
+    });
+    if (!Code)
+      throw new BadRequestException("Code do not exist or has expired");
+    await this.prismaService.codePin.delete({
+      where: {
+        id: Code.id,
+      },
+    });
+    return;
+  }
+
+  async ResetPassword({ password, userId }: ChangePasswordDto) {
+    await this.prismaService.user.update({
+      data: {
+        password: this.passwordEncryption.hashPassword(password),
+      },
+      where: {
+        id: userId,
+      },
+    });
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        id: userId,
+      },
+    });
     const { accessToken, refreshToken } = await this.generateTokens({
       id: user.id,
       role: user.role,
