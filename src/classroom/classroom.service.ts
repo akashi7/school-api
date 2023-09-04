@@ -383,6 +383,15 @@ export class ClassroomService {
         },
       });
 
+    const school = await this.prismaService.user.findFirst({
+      where: {
+        id: user.id,
+      },
+      include: {
+        school: true,
+      },
+    });
+
     const streams = await this.prismaService.stream.findFirst({
       where: {
         id: dto.id,
@@ -402,6 +411,6 @@ export class ClassroomService {
         },
       },
     });
-    return streams;
+    return { streams, school };
   }
 }
