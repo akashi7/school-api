@@ -10,6 +10,7 @@ import { ConfigService } from "@nestjs/config";
 import { EPaymentMethod, ERole, Payment, Prisma, User } from "@prisma/client";
 import { Buffer } from "buffer";
 import { endOfDay, startOfDay } from "date-fns";
+import { Cell, Row, Workbook } from "exceljs";
 import { Request } from "express";
 import { catchError, lastValueFrom } from "rxjs";
 import { IPagination } from "src/__shared__/interfaces/pagination.interface";
@@ -815,6 +816,7 @@ export class PaymentService {
     { page, size }: IPagination,
   ) {
     let result: any;
+    let school: any;
 
     const whereClause: Prisma.PaymentWhereInput = {};
 
@@ -846,15 +848,18 @@ export class PaymentService {
       });
     }
 
-    const school = await this.prismaService.user.findFirst({
-      where: {
-        role: ERole.SCHOOL,
-        schoolId: children.schoolId,
-      },
-      include: {
-        school: true,
-      },
-    });
+    if (user.role !== ERole.STUDENT) {
+      school = await this.prismaService.user.findFirst({
+        where: {
+          role: ERole.SCHOOL,
+          schoolId:
+            user.role === ERole.SCHOOL ? user.schoolId : children.schoolId,
+        },
+        include: {
+          school: true,
+        },
+      });
+    }
 
     if (user.role === ERole.ADMIN) {
       result = await paginate<Payment, Prisma.PaymentFindManyArgs>(
@@ -913,6 +918,124 @@ export class PaymentService {
     }
     return { result, school };
   }
+
+  async downloadPaymentsExcel(
+    id: string,
+    dto: FindPaymentsByStudentDto,
+    user: User,
+  ) {
+    const workbook = new Workbook();
+    const worksheet = workbook.addWorksheet("Payments for student");
+
+    const whereClause: Prisma.PaymentWhereInput = {};
+
+    const student = await this.prismaService.user.findFirst({
+      where: {
+        id,
+        schoolId: user.schoolId,
+      },
+      include: {
+        stream: {
+          select: {
+            id: true,
+            name: true,
+            classroom: { select: { id: true, name: true } },
+          },
+        },
+        school: true,
+      },
+    });
+
+    const titleRow: Row = worksheet.addRow(["Student Name:", student.fullName]);
+
+    titleRow.getCell(1).font = { bold: true };
+
+    const classRow: Row = worksheet.addRow([
+      "Class:",
+      student.stream.classroom.name,
+    ]);
+    classRow.getCell(2).font = { bold: true };
+
+    const streamRow: Row = worksheet.addRow(["Stream:", student.stream.name]);
+    streamRow.getCell(3).font = { bold: true };
+
+    worksheet.addRow([]);
+
+    if (dto.from && dto.to) {
+      const start = new Date(dto.from);
+      const end = new Date(dto.to);
+      whereClause.AND = [
+        { createdAt: { gte: startOfDay(start) } },
+        { createdAt: { lte: endOfDay(end) } },
+      ];
+    }
+
+    const headerRow: Row = worksheet.addRow([
+      "Date",
+      "Amount",
+      "Status",
+      "Method",
+      "Term",
+      "Description",
+    ]);
+
+    headerRow.eachCell((cell: Cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFA0A0A0" },
+      };
+      cell.border = { bottom: { style: "medium" } };
+    });
+
+    const payments = await this.prismaService.payment.findMany({
+      where: {
+        student:
+          user.role === ERole.SCHOOL
+            ? { id, schoolId: user.schoolId }
+            : user.role === ERole.STUDENT
+            ? { id: user.id }
+            : user.role === ERole.RELATIVE
+            ? {
+                id,
+                relativeId: user.id,
+              }
+            : { id, parentId: user.id },
+        academicYearId: dto.academicYearId,
+        academicTerm: dto.academicTerm,
+        ...whereClause,
+      },
+      include: {
+        fee: true,
+        academicYear: true,
+        student: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    payments.forEach((payment) => {
+      worksheet.addRow([
+        payment.date,
+        payment.amount,
+        payment.status,
+        payment.paymentMethod,
+        payment.academicTerm,
+        payment.description,
+      ]);
+    });
+
+    worksheet.columns.forEach((column) => {
+      column.width = 25;
+    });
+
+    return {
+      workbook,
+      filename: `Payment report`,
+    };
+  }
+
   async findAllPaymentsMade(
     dto: FindAllPaymentsDto,
     user: User,
@@ -970,5 +1093,65 @@ export class PaymentService {
     );
 
     return result;
+  }
+
+  async generateNewMpessaToken() {
+    const agent = this.ReturnAgent();
+    const keys = `${this.configService.get("mpesa").consumerKey}:${
+      this.configService.get("mpesa").consumerSecret
+    }`;
+    const basicEncode = Buffer.from(keys).toString("base64");
+    try {
+      const auth = (
+        await lastValueFrom(
+          this.httpService.post<any>(
+            `${
+              this.configService.get("mpesa").tokenUrl
+            }?grant_type=client_credentials`,
+            "",
+            {
+              headers: {
+                Authorization: `Basic ${basicEncode}`,
+              },
+              httpsAgent: agent,
+            },
+          ),
+        )
+      ).data;
+      return auth.access_token;
+    } catch (error) {
+      console.log({ error });
+    }
+  }
+
+  async makeNewMpessapayment() {
+    const token = await this.generateNewMpessaToken();
+    const agent = this.ReturnAgent();
+    const body = {
+      phoneNumber: "254742719887",
+      amount: "100",
+      sharedShortCode: true,
+      orgShortCode: "",
+      orgPassKey: "",
+      callbackUrl: `https://webhook.site/dfc3484d-c349-46f5-b666-086c58e9fa98`,
+      invoiceNumber: uuidv4(),
+      transactionDescription: "school fee payment",
+    };
+    const response = await lastValueFrom(
+      this.httpService
+        .post<any>(`${this.configService.get("mpesa").url}/stkpush`, body, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          httpsAgent: agent,
+        })
+        .pipe(
+          catchError((err) => {
+            throw new BadRequestException(err.response.data);
+          }),
+        ),
+    );
+    return response.data;
   }
 }

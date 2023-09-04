@@ -28,6 +28,7 @@ export function appConfig(): IAppConfig {
       shortCode: process.env.MPESA_SHORT_CODE,
       passKey: process.env.MPESA_PASS_KEY,
       callbackUrl: process.env.MPESA_CALLBACK_URL,
+      tokenUrl: process.env.MPESA_API_TOKEN_URL,
     },
     stripe: {
       secretKey: process.env.STRIPE_SECRET_KEY,

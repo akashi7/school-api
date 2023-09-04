@@ -30,6 +30,7 @@ interface IMpesaConfig {
   shortCode: string;
   passKey: string;
   callbackUrl: string;
+  tokenUrl: string;
 }
 
 interface SpennConfig {

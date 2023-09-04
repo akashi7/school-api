@@ -65,7 +65,7 @@ export class MessageService {
       },
     });
 
-    let users: any[];
+    let users: any[] = [];
 
     if (dto.streamIds && dto.streamIds.length > 0) {
       const students = await this.prismaService.studentPromotion.findMany({
@@ -79,11 +79,10 @@ export class MessageService {
           student: true,
         },
       });
-      users = students.map(
-        (studentPromotion) => studentPromotion.student.email,
-      );
+      users = students.map((studentPromotion) => studentPromotion.student);
     }
-    if (!dto.streamIds && dto.streamIds.length === 0) {
+
+    if (!dto.streamIds && dto.to && dto.to.length > 0) {
       const allUsers = await this.prismaService.user.findMany({
         where: {
           role: {
@@ -94,41 +93,48 @@ export class MessageService {
       users = allUsers;
     }
 
-    const emailPromises = users
-      .filter((user) => user.email && dto.messageType.includes("EMAIL"))
-      .map(async (user) => {
-        try {
-          await this.mailService.sendMail(
-            user.email,
-            dto.subject,
-            user.schoolId ? user.email : "no-reply@schoolnestpay.com",
-            dto.content,
-          );
-        } catch (error) {
-          console.error(
-            `Error sending email to user with role ${user.role}:`,
-            error,
-          );
-        }
-      });
+    const sendEmails = async (
+      recipient: string,
+      subject: string,
+      content: string,
+    ) => {
+      try {
+        await this.mailService.sendMail(
+          recipient,
+          subject,
+          "no-reply@schoolnestpay.com",
+          content,
+        );
+      } catch (error) {
+        console.error(`Error sending email to ${recipient}:`, error);
+      }
+    };
 
-    await Promise.all(emailPromises);
+    if (dto.email) {
+      await sendEmails(dto.email, dto.subject, dto.content);
+    } else {
+      const emailPromises = users
+        .filter((user) => user.email && dto.messageType.includes("EMAIL"))
+        .map(async (user) => {
+          await sendEmails(user.email, dto.subject, dto.content);
+        });
 
-    try {
-      await this.prismaService.messages.create({
-        data: {
-          to: dto.to,
-          messageType: dto.messageType,
-          message: dto.content,
-          subject: dto.subject,
-          schoolId: User.schoolId,
-        },
-      });
-    } catch (error) {
-      console.error("Error creating messages entry:", error);
+      await Promise.all(emailPromises);
+
+      try {
+        await this.prismaService.messages.create({
+          data: {
+            to: dto.to,
+            messageType: dto.messageType,
+            message: dto.content,
+            subject: dto.subject,
+            schoolId: User.schoolId,
+          },
+        });
+      } catch (error) {
+        console.error("Error creating messages entry:", error);
+      }
     }
-
-    return;
   }
 
   async getAllMessages(user: User, { page, size }: IPagination) {

@@ -9,11 +9,12 @@ import {
   Query,
   RawBodyRequest,
   Req,
+  Res,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ApiTags } from "@nestjs/swagger";
 import { ERole, User } from "@prisma/client";
-import { Request } from "express";
+import { Request, Response } from "express";
 import {
   PageResponse,
   Paginated,
@@ -22,7 +23,10 @@ import {
 import { IPagination } from "src/__shared__/interfaces/pagination.interface";
 import { Auth } from "src/auth/decorators/auth.decorator";
 import { GetUser } from "src/auth/decorators/get-user.decorator";
-import { FindAllPaymentsDto } from "src/fee/dto/find-fees.dto";
+import {
+  FindAllPaymentsDto,
+  FindPaymentsByStudentDto,
+} from "src/fee/dto/find-fees.dto";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
 import { SpennCallbackUrlBody } from "./interfaces/mpesa.interface";
@@ -86,5 +90,29 @@ export class PaymentController {
       options,
     );
     return new GenericResponse("Student payments retrieved", payload);
+  }
+
+  @Get("/downloadExcel/:id")
+  @Auth(ERole.ADMIN, ERole.SCHOOL)
+  async downloadPayroll(
+    @Param("id") id: string,
+    @GetUser() user: User,
+    @Res() res: Response,
+    @Query() dto: FindPaymentsByStudentDto,
+  ) {
+    const { workbook, filename } =
+      await this.paymentService.downloadPaymentsExcel(id, dto, user);
+    res.set({
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename=${filename}.xlsx`,
+    });
+    workbook.xlsx.write(res).then(() => res.end());
+  }
+  @Post("mpessa")
+  @HttpCode(HttpStatus.OK)
+  async mpessaToken() {
+    const payload = await this.paymentService.makeNewMpessapayment();
+    return new GenericResponse("Payment generated", payload);
   }
 }
