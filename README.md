@@ -18,4 +18,4 @@ The swagger documentation can be found on the following endpoint: `/docs/swagger
 
 ## Authors
 
-- [Brian Gitego](https://github.com/gitegob) (gitegob@gmail.com) -[Christian Nseko](https://github.com/akashi7)(christiannseko@gmail.com)
+-[Christian Nseko](https://github.com/akashi7)(christiannseko@gmail.com)
