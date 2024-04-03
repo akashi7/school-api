@@ -18,6 +18,7 @@ import { DeductibleModule } from "./deductible/deductible.module";
 import { EmployeeModule } from "./employee/employee.module";
 import { FeeModule } from "./fee/fee.module";
 import { InstallmentModule } from "./installment/installment.module";
+import { MailModule } from "./mail/mail.module";
 import { MessageModule } from "./message/message.module";
 import { ParentModule } from "./parent/parent.module";
 import { PaymentModule } from "./payment/payment.module";
@@ -25,10 +26,9 @@ import { PayrollModule } from "./payroll/payroll.module";
 import { PositionModule } from "./position/position.module";
 import { PrismaModule } from "./prisma.module";
 import { PrismaService } from "./prisma.service";
+import { RelativeModule } from "./relative/relative.module";
 import { SchoolModule } from "./school/school.module";
 import { StudentModule } from "./student/student.module";
-import { MailModule } from './mail/mail.module';
-import { RelativeModule } from './relative/relative.module';
 
 @Module({
   imports: [
